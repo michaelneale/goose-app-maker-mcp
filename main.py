@@ -7,7 +7,6 @@ import json
 import shutil
 import http.server
 import socketserver
-import re
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
@@ -23,6 +22,12 @@ logger.info("Starting Goose App Maker MCP server...")
 APP_DIR = os.path.expanduser("~/.config/goose/app-maker-apps")
 os.makedirs(APP_DIR, exist_ok=True)
 logger.info(f"Using app directory: {APP_DIR}")
+
+# Define paths for resources
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+RESOURCES_DIR = os.path.join(SCRIPT_DIR, "resources")
+README_PATH = os.path.join(SCRIPT_DIR, "README.md")
+GOOSE_API_PATH = os.path.join(RESOURCES_DIR, "goose_api.js")
 
 # Global variable to store the HTTP server instance
 http_server = None
@@ -41,34 +46,28 @@ You can:
 
 When generating web apps:
 - Create clean, modern, and responsive designs
-- Ensure proper HTML, CSS, and JavaScript structure
-- Include appropriate documentation
-- Use best practices for web development
-- Consider accessibility and cross-browser compatibility
+- They should be beautiful and user-friendly
+- Ensure proper HTML5, CSS, and JavaScript structure
 
 Each app is stored in its own directory within ~/.config/goose/app-maker-apps.
+
+Resources:
+- The resources directory is located at: {resources_dir}
+- For example apps and templates, refer to the examples in the [README.md]({readme_path})
+- For apps requiring dynamic functionality or access to data sources/services, include [goose_api.js]({goose_api_path}) in your app
+  - This script provides methods to communicate with the Goose API
+  - When served, environment variables like $GOOSE_PORT and $GOOSE_SERVER__SECRET_KEY are automatically replaced with actual values
 """
+
+# Format the instructions with dynamic paths
+instructions = instructions.format(
+    resources_dir=RESOURCES_DIR,
+    readme_path=README_PATH,
+    goose_api_path=GOOSE_API_PATH
+)
 
 mcp = FastMCP("Goose App Maker", instructions=instructions)
 
-def cleanup_old_files(max_age_days=30):
-    """
-    Clean up temporary files that might have been left behind
-
-    Args:
-        max_age_days: Maximum age of files to keep in days
-    """
-    current_time = time.time()
-    max_age_seconds = max_age_days * 24 * 3600
-
-    try:
-        # We don't auto-delete apps, but we could add cleanup for temp files here
-        pass
-    except Exception as e:
-        logger.error(f"Error cleaning up old files: {e}")
-
-# Clean up old files on startup
-cleanup_old_files()
 
 @mcp.tool()
 def list_apps() -> Dict[str, Any]:

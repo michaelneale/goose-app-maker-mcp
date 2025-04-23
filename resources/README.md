@@ -12,10 +12,13 @@ A dark mode company analysis dashboard that can be used as a template if needed
 
 A richer interactive app for performance reporting (but visually basic)
 
+## kitchen-sink
+
+A basic but more complete example including how to dynamically fetch data from goose in the app
 
 ### goose_api.js
 
-A JavaScript client for interacting with the Goose API. This client handles sending requests and processing streaming responses.
+A JavaScript client for interacting with the Goose API. This client handles sending requests and processing streaming responses, use this for web apps that need dynamic data by copying it next to other files as needed.
 
 #### Usage
 
@@ -39,10 +42,7 @@ A JavaScript client for interacting with the Goose API. This client handles send
 
 #### Environment Variables
 
-The client uses environment variables that are replaced at serve time:
-- `$GOOSE_PORT`: The port on which the Goose server is running
-- `$GOOSE_SERVER__SECRET_KEY`: The secret key for authenticating with the Goose server
-
+The client uses environment variables that are replaced at serve time, you don't need to worry about these.
 These variables are automatically replaced with actual values when the file is served by the Goose App Maker server.
 
 #### Full Example

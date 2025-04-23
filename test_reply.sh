@@ -13,7 +13,7 @@ cat > "$REQUEST_FILE" << EOF
       "content": [
         {
           "type": "text",
-          "text": "list files in this dir"
+          "text": "list files in this dir. Format results as a json array strictly"
         }
       ]
     }

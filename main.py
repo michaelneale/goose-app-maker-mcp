@@ -7,6 +7,7 @@ import json
 import shutil
 import http.server
 import socketserver
+import requests
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
@@ -48,6 +49,12 @@ When generating web apps:
 - Create clean, modern, and responsive designs
 - They should be beautiful and user-friendly
 - Ensure proper HTML5, CSS, and JavaScript structure
+- You can embed data in the app if it is static and non PII, and safe to do so
+- You can use the goose_api.js when data needs to be dynamic
+- Care is needed when using other apis as they may not always be available, and credentials may be required (so consider using goose_api.js)
+- Open the app as it is built with the default browser to show the user, and invite feedback
+- Use other tools as available to assist in building the app (such as screenshot for visual review)
+- Other tools can be used via the goose_api.js library in the app as needed (it will return textual data so can be prompted to format it appropriately, markdown works well, simple lists etc)
 
 Each app is stored in its own directory within ~/.config/goose/app-maker-apps.
 
@@ -57,6 +64,12 @@ Resources:
 - For apps requiring dynamic functionality or access to data sources/services, include [goose_api.js]({goose_api_path}) in your app
   - This script provides methods to communicate with the Goose API
   - When served, environment variables like $GOOSE_PORT and $GOOSE_SERVER__SECRET_KEY are automatically replaced with actual values
+  - include that with app files, placed next to them
+  - When using sendGooseRequest(message) - the message should clearly specify the desire result format
+    - use the `testSendGooseMessage` tool to validate with some exmaple queries and prompts to get the result your app needs and iterate.
+    - You can also use the testSendGooseMessage tool to directly send messages to the Goose API to try out your prompt to get the right format back of the data you need for your app
+
+
 """
 
 # Format the instructions with dynamic paths
@@ -67,6 +80,23 @@ instructions = instructions.format(
 )
 
 mcp = FastMCP("Goose App Maker", instructions=instructions)
+
+
+@mcp.tool()
+def publish_app(app_name: str) -> Dict[str, Any]:
+    """
+    Publish an app to the web. This is a placeholder function.
+    
+    Args:
+        app_name: Name of the application to publish
+    """
+
+    # TODO: this could zip up the app dir
+    # still working on how to share this
+
+    return
+            
+
 
 
 @mcp.tool()
@@ -494,6 +524,97 @@ def open_app(app_name: str) -> Dict[str, Any]:
         logger.error(f"Error opening app: {e}")
         return {"success": False, "error": f"Failed to open app: {str(e)}"}
 
+@mcp.tool()
+def testSendGooseMessage(message: str, session_id: str = "web-client-session", session_working_dir: str = "/tmp") -> Dict[str, Any]:
+    """
+    Send a message to the Goose API and return the response.
+    This is a Python implementation of the functionality in goose_api.js.
+    
+    Args:
+        message: The message to send to Goose
+        session_id: Optional session ID (default: "web-client-session")
+        session_working_dir: Optional working directory for the session (default: "/tmp")
+    
+    Returns:
+        A dictionary containing the result of the operation and the response
+    """
+    import os
+    import time
+    
+    try:
+        # Get environment variables
+        goose_port = os.environ.get('GOOSE_PORT', '3000')
+        secret_key = os.environ.get('GOOSE_SERVER__SECRET_KEY', '')
+        
+        logger.info(f"Using GOOSE_PORT={goose_port}")
+        logger.info(f"Using GOOSE_SERVER__SECRET_KEY={secret_key[:5]}..." if secret_key else "No secret key found")
+        
+        # Create the request body
+        request_body = {
+            "messages": [
+                {
+                    "role": "user",
+                    "created": int(time.time()),
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": message
+                        }
+                    ]
+                }
+            ],
+            "session_id": session_id,
+            "session_working_dir": session_working_dir
+        }
+        
+        logger.info(f"Sending request to goose-server on port {goose_port}")
+        logger.info(f"Request body: {json.dumps(request_body, indent=2)}")
+        
+        # Send the request
+        response = requests.post(
+            f"http://localhost:{goose_port}/reply",
+            headers={
+                "Content-Type": "application/json",
+                "X-Secret-Key": secret_key
+            },
+            json=request_body,
+            stream=True  # Enable streaming response
+        )
+        
+        # Check if the response is ok
+        response.raise_for_status()
+        
+        # Process the streaming response
+        chunks = []
+        for chunk in response.iter_content(chunk_size=1024, decode_unicode=False):
+            if chunk:
+                # Decode the chunk
+                decoded_chunk = chunk.decode('utf-8')
+                chunks.append(decoded_chunk)
+                logger.info(f"Received chunk: {decoded_chunk[:100]}..." if len(decoded_chunk) > 100 else f"Received chunk: {decoded_chunk}")
+        
+        full_response = ''.join(chunks)
+        
+        return {
+            "success": True,
+            "message": "Successfully sent message to Goose API",
+            "response": full_response,
+            "chunks_count": len(chunks)
+        }
+        
+    except requests.RequestException as e:
+        logger.error(f"Error sending request to Goose API: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to send message to Goose API: {str(e)}"
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error in testSendGooseMessage: {e}")
+        return {
+            "success": False,
+            "error": f"Unexpected error: {str(e)}"
+        }
+
 def test_tools():
     """Test the MCP tools with basic commands."""
     logger.info("Testing Goose App Maker MCP tools")
@@ -556,6 +677,14 @@ document.addEventListener('DOMContentLoaded', function() {
     logger.info("Testing open_app tool")
     result = open_app("test-app")
     logger.info(f"open_app result: {result}")
+    
+    # Test testSendGooseMessage if environment variables are set
+    if os.environ.get('GOOSE_PORT') and os.environ.get('GOOSE_SERVER__SECRET_KEY'):
+        logger.info("Testing testSendGooseMessage tool")
+        result = testSendGooseMessage("Hello from Goose App Maker test!")
+        logger.info(f"testSendGooseMessage result: {result.get('success')}, chunks: {result.get('chunks_count')}")
+    else:
+        logger.info("Skipping testSendGooseMessage test - environment variables not set")
     
     # Wait a bit before stopping the server
     time.sleep(5)

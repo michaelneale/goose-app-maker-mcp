@@ -14,6 +14,23 @@
         </header>
         
         <main>
+            <section class="demo-section goose-api-section">
+                <h2>Goose API Demo</h2>
+                <div class="goose-container">
+                    <div class="goose-input">
+                        <textarea id="goose-message" placeholder="Enter your message here...">list files in this dir</textarea>
+                        <div class="button-row">
+                            <button id="goose-send-btn" class="btn">Send Message</button>
+                            <button id="goose-clear-btn" class="btn reset-btn">Clear Response</button>
+                        </div>
+                    </div>
+                    <div class="goose-response">
+                        <h3>Response:</h3>
+                        <div id="goose-response" class="response-content"></div>
+                    </div>
+                </div>
+            </section>
+            
             <section class="demo-section">
                 <h2>Interactive Counter</h2>
                 <div class="counter-container">
@@ -56,6 +73,7 @@
         </footer>
     </div>
     
+    <script src="goose_api.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

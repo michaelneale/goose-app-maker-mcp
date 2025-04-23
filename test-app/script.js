@@ -1,6 +1,7 @@
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the app
+    initGooseApi();
     initCounter();
     initColorChanger();
     initTodoList();
@@ -9,6 +10,58 @@ document.addEventListener('DOMContentLoaded', function() {
     // Log that the app is ready
     console.log('Goose App Maker Demo is ready!');
 });
+
+// Goose API functionality
+function initGooseApi() {
+    const messageInput = document.getElementById('goose-message');
+    const sendButton = document.getElementById('goose-send-btn');
+    const clearButton = document.getElementById('goose-clear-btn');
+    const responseContainer = document.getElementById('goose-response');
+    
+    // Add event listeners
+    sendButton.addEventListener('click', sendMessage);
+    clearButton.addEventListener('click', clearResponse);
+    
+    async function sendMessage() {
+        const message = messageInput.value.trim();
+        
+        if (!message) {
+            showError('Please enter a message');
+            return;
+        }
+        
+        // Clear previous response and show loading
+        responseContainer.innerHTML = '<div class="loading-message">Sending request...</div>';
+        
+        try {
+            // Send the request using our goose_api.js client
+            const response = await sendGooseRequest(message);
+            
+            // Clear the loading message
+            responseContainer.innerHTML = '';
+            
+            // Process the streaming response
+            await processStreamingResponse(response, (chunk) => {
+                // Append each chunk to the response container
+                responseContainer.textContent += chunk;
+                // Auto-scroll to the bottom
+                responseContainer.scrollTop = responseContainer.scrollHeight;
+            });
+            
+        } catch (error) {
+            console.error('Error:', error);
+            showError(`Error: ${error.message}`);
+        }
+    }
+    
+    function showError(message) {
+        responseContainer.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+    
+    function clearResponse() {
+        responseContainer.innerHTML = '';
+    }
+}
 
 // Counter functionality
 function initCounter() {

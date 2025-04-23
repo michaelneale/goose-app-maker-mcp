@@ -7,6 +7,7 @@ import json
 import shutil
 import http.server
 import socketserver
+import re
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
@@ -350,9 +351,45 @@ def serve_app(app_name: str, port: Optional[int] = None) -> Dict[str, Any]:
             server_port = port
         
         # Create a custom handler that serves from the app directory
-        class AppHandler(http.server.SimpleHTTPRequestHandler):
+        # and replaces environment variables in JavaScript files
+        class EnvAwareHandler(http.server.SimpleHTTPRequestHandler):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, directory=app_path, **kwargs)
+            
+            def do_GET(self):
+                # Get the file path
+                path = self.translate_path(self.path)
+                
+                # Check if the file exists
+                if os.path.isfile(path):
+                    # Check if it's a JavaScript file that might need variable replacement
+                    if path.endswith('.js'):
+                        try:
+                            with open(path, 'r') as f:
+                                content = f.read()
+                            
+                            # Check if the file contains environment variables that need to be replaced
+                            if '$GOOSE_PORT' in content or '$GOOSE_SERVER__SECRET_KEY' in content:
+                                # Replace environment variables
+                                goose_port = os.environ.get('GOOSE_PORT', '3000')
+                                secret_key = os.environ.get('GOOSE_SERVER__SECRET_KEY', '')
+                                
+                                # Replace variables
+                                content = content.replace('$GOOSE_PORT', goose_port)
+                                content = content.replace('$GOOSE_SERVER__SECRET_KEY', secret_key)
+                                
+                                # Send the modified content
+                                self.send_response(200)
+                                self.send_header('Content-type', 'application/javascript')
+                                self.send_header('Content-Length', str(len(content)))
+                                self.end_headers()
+                                self.wfile.write(content.encode('utf-8'))
+                                return
+                        except Exception as e:
+                            logger.error(f"Error processing JavaScript file: {e}")
+                
+                # If we didn't handle it specially, use the default handler
+                return super().do_GET()
         
         # Start the server in a separate thread
         import threading
@@ -360,9 +397,11 @@ def serve_app(app_name: str, port: Optional[int] = None) -> Dict[str, Any]:
         def run_server():
             global http_server
             try:
-                with socketserver.TCPServer(("", server_port), AppHandler) as server:
+                with socketserver.TCPServer(("", server_port), EnvAwareHandler) as server:
                     http_server = server
                     logger.info(f"Serving app '{app_name}' at http://localhost:{server_port}")
+                    logger.info(f"Using GOOSE_PORT={os.environ.get('GOOSE_PORT', '3000')}")
+                    logger.info(f"Using GOOSE_SERVER__SECRET_KEY={os.environ.get('GOOSE_SERVER__SECRET_KEY', '')[:5]}...")
                     server.serve_forever()
             except Exception as e:
                 logger.error(f"Server error: {e}")
@@ -556,7 +595,7 @@ def live_runthrough():
         "type": "static",
         "description": "A demo application with interactive features",
         "created": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "files": ["index.html", "style.css", "script.js"]
+        "files": ["index.html", "style.css", "script.js", "goose_api.js"]
     }
     
     with open(os.path.join(dest_dir, "manifest.json"), 'w') as f:
@@ -564,7 +603,7 @@ def live_runthrough():
     
     # Copy the files
     try:
-        for file_name in ["index.html", "style.css", "script.js"]:
+        for file_name in ["index.html", "style.css", "script.js", "goose_api.js"]:
             src_file = os.path.join(src_dir, file_name)
             dest_file = os.path.join(dest_dir, file_name)
             

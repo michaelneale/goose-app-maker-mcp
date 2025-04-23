@@ -1,7 +1,7 @@
 [project]
 name = "app-maker-mcp"
 version = "0.0.1"
-description = "Goose app maker"
+description = "Goose app maker - create and serve web applications"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -16,7 +16,7 @@ authors = [
 Homepage = "https://github.com/michaelneale/"
 
 [project.scripts]
-shopper-mcp = "main:main"
+app-maker-mcp = "main:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]

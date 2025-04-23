@@ -1,6 +1,6 @@
-# Goose App Maker MCP
+# Goose App Maker
 
-This MCP (Machine-Controlled Program) allows users to create, manage, and serve web applications through Goose.
+This MCP (Model Context Protocol) servcer allows users to create, manage, and serve web applications through Goose.
 
 ## Features
 

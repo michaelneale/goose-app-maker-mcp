@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Review Helper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .processing-stage {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        .stage-indicator {
+            margin-bottom: 10px;
+        }
+        
+        .progress {
+            height: 5px;
+        }
+        
+        .stage-detail {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .dimension-section {
+            min-height: 200px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: white;
+        }
+
+        .feedback-item {
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            position: relative;
+            cursor: move;
+        }
+
+        .feedback-item.dragging {
+            opacity: 0.5;
+            border: 2px dashed #0d6efd;
+        }
+
+        .dimension-section.drag-over {
+            background-color: #f0f7ff;
+            border: 2px dashed #0d6efd;
+        }
+
+        .feedback-source {
+            font-weight: bold;
+            color: #0d6efd;
+            margin-bottom: 5px;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+
+        .confidence-indicator {
+            font-size: 0.8em;
+            color: #28a745;
+            margin-top: 5px;
+        }
+
+        .dimension-header {
+            color: #0d6efd;
+            font-weight: 600;
+        }
+
+        .feedback-count {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-left: 8px;
+        }
+
+        /* Header styling */
+        .app-header {
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+        }
+
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .app-title h2 {
+            color: #000;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .version-tag {
+            font-size: 0.875rem;
+            color: #6c757d;
+            font-weight: normal;
+        }
+
+        .app-subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        .app-icon {
+            width: 32px;
+            height: 32px;
+            background-color: #0d6efd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        /* Processing modal styling */
+        .processing-stage {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        .current-stage {
+            font-weight: 500;
+            color: #055160;
+        }
+        
+        .stage-detail {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .progress {
+            height: 6px;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            background-color: #0d6efd;
+        }
+
+        /* Review message styling */
+        .alert-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0dcaf0;
+            border-radius: 4px;
+        }
+
+        .alert-info h5 {
+            color: #055160;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-info p {
+            color: #087990;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <header class="app-header">
+            <div class="app-title">
+                <div class="app-icon">P</div>
+                <h2>Performance Review Helper <span class="version-tag">v1.0</span></h2>
+            </div>
+            <div class="app-subtitle">
+                Transform your feedback and accomplishments into a polished performance evaluation in minutes
+            </div>
+        </header>
+        
+        <!-- Input Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Input Feedback and Accomplishments</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Feedback</label>
+                            <textarea id="feedbackInput" class="form-control" rows="10" 
+                                    placeholder="Paste in feedback from your performance review period, including comments from:
+• Managers and team leads
+• Peers and teammates
+• Project partners and stakeholders
+
+The tool will analyze and sort each piece of feedback into three categories:
+• Impact: Achievements, outcomes, and business results
+• Behavior: Teamwork, collaboration, and professional conduct
+• Betterment: Growth, learning, and development
+
+Formatting tip: Separate distinct pieces of feedback with blank lines for best results."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Accomplishments</label>
+                            <textarea id="accomplishmentsInput" class="form-control" rows="10"
+                                    placeholder="List your key accomplishments from this review period, such as:
+• Business impact (e.g., &quot;Increased customer satisfaction by 15%&quot;)
+• Project success (e.g., &quot;Successfully launched Q3 marketing campaign&quot;)
+• Team leadership (e.g., &quot;Mentored two new team members&quot;)
+• Process improvements (e.g., &quot;Streamlined client onboarding workflow&quot;)
+• Skill development (e.g., &quot;Earned advanced certification in project management&quot;)
+
+Format as individual items, one per line. Be specific and include metrics where possible."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes and Other Considerations <span class="text-muted">(Optional)</span></label>
+                            <textarea id="notesInput" class="form-control" rows="4"
+                                    placeholder="Add any additional context that should be considered in your evaluation, such as:
+• Extended leave or medical absence during the review period
+• Significant role or team changes
+• Additional responsibilities or scope changes
+• Major organizational changes that impacted your work
+• Personal development activities or certifications in progress
+
+This context will help provide a more complete picture of your performance period."></textarea>
+                        </div>
+                        <button id="startAnalysis" class="btn btn-primary">
+                            Begin Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Processing Stages -->
+        <div id="processingStages" style="display: none;">
+            <h4>Analysis Progress</h4>
+            <div class="processing-stage">
+                <div class="stage-indicator">
+                    <div class="d-flex justify-content-between">
+                        <span id="currentStage">Initial Processing</span>
+                        <span id="stageProgress">0%</span>
+                    </div>
+                    <div class="progress">
+                        <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div id="stageDetail" class="stage-detail">
+                    Preparing to analyze content...
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Categories -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <h4 class="dimension-header">
+                    Impact
+                    <span id="impactCount" class="feedback-count">(0)</span>
+                </h4>
+                <div id="impactSection" class="dimension-section" ondrop="drop(event)" ondragover="allowDrop(event)">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h4 class="dimension-header">
+                    Behavior
+                    <span id="behaviorCount" class="feedback-count">(0)</span>
+                </h4>
+                <div id="behaviorSection" class="dimension-section" ondrop="drop(event)" ondragover="allowDrop(event)">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h4 class="dimension-header">
+                    Betterment
+                    <span id="bettermentCount" class="feedback-count">(0)</span>
+                </h4>
+                <div id="bettermentSection" class="dimension-section" ondrop="drop(event)" ondragover="allowDrop(event)">
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate Button -->
+        <div class="row mt-4 mb-4">
+            <div class="col-12">
+                <button id="generateEvaluation" class="btn btn-success" style="display: none;">
+                    Generate Evaluation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

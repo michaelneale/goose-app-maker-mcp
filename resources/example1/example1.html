@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Company Analysis</title>
+    <style>
+        /* Modern Dark Theme */
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --border-color: #30363d;
+            --hover-bg: #1f2937;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-rows: auto auto auto;
+            gap: 2.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .bucket {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        
+        .bucket:hover {
+            background: var(--hover-bg);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .bucket h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--accent-blue);
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .bucket ul {
+            margin: 0;
+            padding-left: 1.2rem;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+        
+        .bucket li {
+            margin-bottom: 0.75rem;
+            transition: color 0.2s ease;
+        }
+        
+        .bucket li:hover {
+            color: var(--accent-blue);
+        }
+        
+        .row-label {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Modern scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-color);
+        }
+
+        /* Glass morphism effect for buckets */
+        .bucket {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background: rgba(22, 27, 34, 0.8);
+        }
+
+        /* Subtle grid background */
+        body {
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: -1px -1px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .row {
+                grid-template-columns: 1fr;
+            }
+            
+            .bucket {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Category A Row -->
+        <div>
+            <div class="row-label">Category A</div>
+            <div class="row">
+                <div class="bucket">
+                    <h3>Section 1</h3>
+                    <ul>
+                        <li>Primary action type A</li>
+                        <li>Secondary process B</li>
+                        <li>Resource management C</li>
+                        <li>System integration D</li>
+                        <li>Operation type E</li>
+                        <li>Process flow F</li>
+                    </ul>
+                </div>
+                <div class="bucket">
+                    <h3>Section 2</h3>
+                    <ul>
+                        <li>Implementation X</li>
+                        <li>Resource tracking Y</li>
+                        <li>Schedule management Z</li>
+                        <li>System outreach W</li>
+                        <li>Team coordination V</li>
+                        <li>Multi-unit operations U</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category B Row -->
+        <div>
+            <div class="row-label">Category B Services</div>
+            <div class="row">
+                <div class="bucket">
+                    <h3>Group Alpha</h3>
+                    <ul>
+                        <li>System type one</li>
+                        <li>Digital interface two</li>
+                        <li>Process three</li>
+                        <li>Management four</li>
+                        <li>Resource five</li>
+                        <li>Operation six</li>
+                    </ul>
+                </div>
+                <div class="bucket">
+                    <h3>Group Beta</h3>
+                    <ul>
+                        <li>Transfer protocol A</li>
+                        <li>Direct system B</li>
+                        <li>Resource type C</li>
+                        <li>Analysis D</li>
+                        <li>Exchange E</li>
+                        <li>Process F</li>
+                    </ul>
+                </div>
+                <div class="bucket">
+                    <h3>Group Gamma</h3>
+                    <ul>
+                        <li>Platform one</li>
+                        <li>Resource two</li>
+                        <li>Distribution three</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category C Row -->
+        <div>
+            <div class="row-label">Category C Resources</div>
+            <div class="row">
+                <div class="bucket">
+                    <h3>Framework</h3>
+                    <ul>
+                        <li>License Type A</li>
+                        <li>Certificate B</li>
+                        <li>Permit C</li>
+                        <li>Authorization D</li>
+                        <li>Registration E</li>
+                        <li>Certification F</li>
+                    </ul>
+                </div>
+                <div class="bucket">
+                    <h3>Systems</h3>
+                    <ul>
+                        <li>Platform Alpha</li>
+                        <li>Platform Beta</li>
+                        <li>System Gamma</li>
+                        <li>Infrastructure Delta</li>
+                        <li>Development Tools</li>
+                        <li>Integration Layer</li>
+                    </ul>
+                </div>
+                <div class="bucket">
+                    <h3>Information</h3>
+                    <ul>
+                        <li>Primary metrics</li>
+                        <li>Secondary analytics</li>
+                        <li>Integration matrix</li>
+                        <li>Processing models</li>
+                        <li>Analysis engines</li>
+                    </ul>
+                </div>
+                <div class="bucket">
+                    <h3>Connections</h3>
+                    <ul>
+                        <li>External relations</li>
+                        <li>Strategic alliances</li>
+                        <li>System ecosystem</li>
+                        <li>Primary network</li>
+                        <li>Secondary network</li>
+                    </ul>
+                </div>
+                <div class="bucket">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li>Asset type one</li>
+                        <li>Resource access</li>
+                        <li>Infrastructure base</li>
+                        <li>Processing system</li>
+                        <li>Integration stack</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

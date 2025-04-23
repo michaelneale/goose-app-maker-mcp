@@ -4,6 +4,15 @@ This directory contains shared resources that can be used across different Goose
 
 ## Available Resources
 
+## example1
+
+A dark mode company analysis dashboard that can be used as a template if needed
+
+## example2
+
+A richer interactive app for performance reporting (but visually basic)
+
+
 ### goose_api.js
 
 A JavaScript client for interacting with the Goose API. This client handles sending requests and processing streaming responses.

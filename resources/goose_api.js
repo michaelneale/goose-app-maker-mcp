@@ -1,5 +1,28 @@
-// goose_api.js
-// A client for the Goose API that can be used in the browser
+/**
+ * Goose API Client
+ * 
+ * This JavaScript client provides an interface to interact with the Goose API.
+ * It handles sending requests and processing streaming responses.
+ * 
+ * Usage:
+ * 1. Include this file in your HTML:
+ *    <script src="goose_api.js"></script>
+ * 
+ * 2. Send a request to the Goose API:
+ *    const response = await sendGooseRequest("your message here");
+ * 
+ * 3. Process the streaming response:
+ *    await processStreamingResponse(response, (chunk) => {
+ *      console.log("Received chunk:", chunk);
+ *    });
+ * 
+ * Configuration:
+ * The client uses environment variables that are replaced at serve time:
+ * - $GOOSE_PORT: The port on which the Goose server is running
+ * - $GOOSE_SERVER__SECRET_KEY: The secret key for authenticating with the Goose server
+ * 
+ * These variables are automatically replaced with actual values when the file is served.
+ */
 
 // Configuration variables - these will be replaced at serve time
 const GOOSE_PORT = '$GOOSE_PORT';

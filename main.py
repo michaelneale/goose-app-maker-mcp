@@ -571,14 +571,21 @@ def live_runthrough():
     """Perform a live runthrough that copies the test app files and serves them."""
     logger.info("Starting live runthrough of Goose App Maker")
     
-    # Define the source and destination directories
-    src_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test-app")
+    # Define the source directories
+    test_app_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test-app")
+    resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
+    
+    # Define the destination
     app_name = "goose-demo-app"
     dest_dir = os.path.join(APP_DIR, app_name)
     
-    # Check if source directory exists
-    if not os.path.exists(src_dir):
-        logger.error(f"Source directory '{src_dir}' does not exist")
+    # Check if source directories exist
+    if not os.path.exists(test_app_dir):
+        logger.error(f"Test app directory '{test_app_dir}' does not exist")
+        return False
+    
+    if not os.path.exists(resources_dir):
+        logger.error(f"Resources directory '{resources_dir}' does not exist")
         return False
     
     # Delete the destination directory if it exists
@@ -603,16 +610,28 @@ def live_runthrough():
     
     # Copy the files
     try:
-        for file_name in ["index.html", "style.css", "script.js", "goose_api.js"]:
-            src_file = os.path.join(src_dir, file_name)
+        # Copy test app files (except goose_api.js which will come from resources)
+        for file_name in ["index.html", "style.css", "script.js"]:
+            src_file = os.path.join(test_app_dir, file_name)
             dest_file = os.path.join(dest_dir, file_name)
             
             if os.path.exists(src_file):
-                logger.info(f"Copying {file_name} to {dest_file}")
+                logger.info(f"Copying {file_name} from test-app to {dest_file}")
                 shutil.copy2(src_file, dest_file)
             else:
                 logger.error(f"Source file '{src_file}' does not exist")
                 return False
+        
+        # Copy goose_api.js from resources directory
+        resources_api_file = os.path.join(resources_dir, "goose_api.js")
+        dest_api_file = os.path.join(dest_dir, "goose_api.js")
+        
+        if os.path.exists(resources_api_file):
+            logger.info(f"Copying goose_api.js from resources to {dest_api_file}")
+            shutil.copy2(resources_api_file, dest_api_file)
+        else:
+            logger.error(f"Resources API file '{resources_api_file}' does not exist")
+            return False
         
         logger.info(f"Successfully copied all files to {dest_dir}")
         

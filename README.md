@@ -11,6 +11,8 @@ This MCP (Model Context Protocol) servcer allows users to create, manage, and se
 - Update existing web application files
 - List all available web applications
 - Delete web applications
+- resources dir for helper scripts and examples
+- resources/goose_api.js which can be used in web apps that need to talk to goose api (web serve will provide creds just in time)
 
 ## Usage from source
 

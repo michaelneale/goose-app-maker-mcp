@@ -7,7 +7,7 @@ import json
 import shutil
 import http.server
 import socketserver
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union, List
 from pathlib import Path
 
 # Configure logging
@@ -32,6 +32,10 @@ GOOSE_API_PATH = os.path.join(RESOURCES_DIR, "kitchen-sink/goose_api.js")
 # Global variable to store the HTTP server instance
 http_server = None
 server_port = 8000  # Default port
+
+# Global variable to store app responses and their associated events
+app_responses = {}
+response_locks = {}
 
 instructions = """
 You are an expert html5/CSS/js web app author for casual "apps" for goose.
@@ -420,6 +424,55 @@ def serve_app(app_name: str) -> Dict[str, Any]:
                 super().end_headers()
             
             def do_GET(self):
+                # Check if this is a wait_for_response request
+                if self.path.startswith('/wait_for_response/'):
+                    import threading
+                    import time
+                    
+                    response_id = self.path.split('/')[-1]
+                    
+                    # Check if response already exists
+                    if response_id in app_responses:
+                        # Return the response immediately
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        response_data = json.dumps({"success": True, "data": app_responses[response_id]})
+                        self.wfile.write(response_data.encode('utf-8'))
+                        return
+                    
+                    # Create a condition variable for this response if it doesn't exist
+                    if response_id not in response_locks:
+                        response_locks[response_id] = (threading.Condition(), False)  # (lock, response_ready)
+                    
+                    # Wait for the response with timeout
+                    lock, response_ready = response_locks[response_id]
+                    with lock:
+                        # Wait for up to 30 seconds for the response to be ready
+                        start_time = time.time()
+                        while not response_ready and time.time() - start_time < 30:
+                            lock.wait(30 - (time.time() - start_time))
+                            
+                            # Check if the response is now available
+                            if response_id in app_responses:
+                                response_ready = True
+                        
+                        # Check if we got the response or timed out
+                        if response_ready or response_id in app_responses:
+                            self.send_response(200)
+                            self.send_header('Content-type', 'application/json')
+                            self.end_headers()
+                            response_data = json.dumps({"success": True, "data": app_responses[response_id]})
+                            self.wfile.write(response_data.encode('utf-8'))
+                        else:
+                            # Timeout occurred
+                            self.send_response(408)  # Request Timeout
+                            self.send_header('Content-type', 'application/json')
+                            self.end_headers()
+                            response_data = json.dumps({"success": False, "error": "Timeout waiting for response"})
+                            self.wfile.write(response_data.encode('utf-8'))
+                    return
+                
                 # Get the file path
                 path = self.translate_path(self.path)
                 
@@ -634,6 +687,107 @@ def refresh_app() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error refreshing app: {e}")
         return {"success": False, "error": f"Failed to refresh app: {str(e)}"}
+
+@mcp.tool()
+def app_response_str(response_id: str, response_data: str) -> Dict[str, Any]:
+    """
+    Use this to return a string response to the app that has been requested.
+    
+    Args:
+        response_id: Unique identifier for the response
+        response_data: String data to store
+    
+    Returns:
+        A dictionary containing the result of the operation
+    """
+    global app_responses, response_locks
+    
+    try:
+        # Store the response in the global dictionary
+        app_responses[response_id] = response_data
+        
+        # Notify any waiting threads
+        if response_id in response_locks:
+            with response_locks[response_id][0]:
+                response_locks[response_id][1] = True
+                response_locks[response_id][0].notify_all()
+        
+        return {
+            "success": True,
+            "response_id": response_id,
+            "message": f"String response stored successfully with ID '{response_id}'"
+        }
+    except Exception as e:
+        logger.error(f"Error storing string response: {e}")
+        return {"success": False, "error": f"Failed to store response: {str(e)}"}
+
+@mcp.tool()
+def app_response_list(response_id: str, response_data: List[str]) -> Dict[str, Any]:
+    """
+    Use this to return a list of strings response to the app that has been requested.
+    
+    Args:
+        response_id: Unique identifier for the response
+        response_data: List of strings to store
+    
+    Returns:
+        A dictionary containing the result of the operation
+    """
+    global app_responses, response_locks
+    
+    try:
+        # Store the response in the global dictionary
+        app_responses[response_id] = response_data
+        
+        # Notify any waiting threads
+        if response_id in response_locks:
+            with response_locks[response_id][0]:
+                response_locks[response_id][1] = True
+                response_locks[response_id][0].notify_all()
+        
+        return {
+            "success": True,
+            "response_id": response_id,
+            "count": len(response_data),
+            "message": f"List response stored successfully with ID '{response_id}'"
+        }
+    except Exception as e:
+        logger.error(f"Error storing list response: {e}")
+        return {"success": False, "error": f"Failed to store response: {str(e)}"}
+
+@mcp.tool()
+def app_response_table(response_id: str, response_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Use this to return a table response (list of JSON objects) to the app that has been requested.
+    
+    Args:
+        response_id: Unique identifier for the response
+        response_data: List of JSON objects (each representing a row in a table)
+    
+    Returns:
+        A dictionary containing the result of the operation
+    """
+    global app_responses, response_locks
+    
+    try:
+        # Store the response in the global dictionary
+        app_responses[response_id] = response_data
+        
+        # Notify any waiting threads
+        if response_id in response_locks:
+            with response_locks[response_id][0]:
+                response_locks[response_id][1] = True
+                response_locks[response_id][0].notify_all()
+        
+        return {
+            "success": True,
+            "response_id": response_id,
+            "rows": len(response_data),
+            "message": f"Table response stored successfully with ID '{response_id}'"
+        }
+    except Exception as e:
+        logger.error(f"Error storing table response: {e}")
+        return {"success": False, "error": f"Failed to store response: {str(e)}"}
 
 
 def live_runthrough():

@@ -36,7 +36,7 @@ const GOOSE_SERVER__SECRET_KEY = '$GOOSE_SERVER__SECRET_KEY';
 async function sendGooseRequest(message, options = {}) {
   // Default options
   const defaults = {
-    //sessionId: 'web-client-session',
+    sessionId: 'web-client-session',
     sessionWorkingDir: '/tmp'
   };
   
@@ -57,7 +57,7 @@ async function sendGooseRequest(message, options = {}) {
         ]
       }
     ],
-    session_id: config.sessionId,
+    //session_id: config.sessionId,
     session_working_dir: config.sessionWorkingDir
   };
   

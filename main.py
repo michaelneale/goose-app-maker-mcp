@@ -8,7 +8,7 @@ import shutil
 import http.server
 import socketserver
 import requests
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from pathlib import Path
 
 # Configure logging
@@ -35,8 +35,10 @@ http_server = None
 server_port = 8000  # Default port
 
 instructions = """
-You are a web app generator and server. You help users create and manage web applications
-that are stored in the ~/.config/goose/app-maker-apps directory.
+You are an expert html5/CSS/js web app author for casual "apps" for goose.
+
+You can also serve up apps via a built in server. 
+You help users create and manage web applications that are stored in the ~/.config/goose/app-maker-apps directory.
 
 You can:
 1. Generate new web applications based on user requirements
@@ -44,6 +46,7 @@ You can:
 3. Modify existing web applications
 4. List available web applications
 5. Open web applications in the default browser
+6. Take some existing web app/html and bring it into the app-maker-apps directory for serving.
 
 When generating web apps:
 - Create clean, modern, and responsive designs
@@ -58,8 +61,11 @@ When generating web apps:
 
 Each app is stored in its own directory within ~/.config/goose/app-maker-apps.
 
+Once an app is created, you can modify its files using the usual developer tools (eg text_editor) directly.
+Look in directory at ~/.config/goose/app-maker-apps/[app-name]/
+
 Resources:
-- The resources directory is located at: {resources_dir}
+- The resources directory is located at: {resources_dir} which has utilities and examples you can refer to.
 - For example apps and templates, refer to the examples in the [README.md]({readme_path})
 - For apps requiring dynamic functionality or access to data sources/services, include [goose_api.js]({goose_api_path}) in your app
   - This script provides methods to communicate with the Goose API
@@ -67,7 +73,7 @@ Resources:
   - include that with app files, placed next to them
   - When using sendGooseRequest(message) - the message should clearly specify the desire result format
     - use the `testSendGooseMessage` tool to validate with some exmaple queries and prompts to get the result your app needs and iterate.
-    - You can also use the testSendGooseMessage tool to directly send messages to the Goose API to try out your prompt to get the right format back of the data you need for your app
+    - when building the app use testSendGooseMessage tool with example queries and prompts appented to ensure the result data format is what you require in the app (markdown or simple json lists/objects can work)
 
 
 """
@@ -146,18 +152,22 @@ def list_apps() -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to list apps: {str(e)}"}
 
 @mcp.tool()
-def create_app(app_name: str, app_type: str, description: str, files: List[Dict[str, str]]) -> Dict[str, Any]:
+def create_app(app_name: str, description: str = "") -> Dict[str, Any]:
     """
-    Create a new web application with the specified files.
+    Create a new web application directory and copy starter files.
+    The starter files are for you to replace with actual content, you don't have to use them as is.
+    the goose_api.js file is a utility you will want to keep in case you need to do api calls as part of your app via goose.
     
     Args:
         app_name: Name of the application (will be used as directory name)
-        app_type: Type of application (e.g., "static", "react", "vue", etc.)
-        description: Brief description of the application
-        files: List of files to create, each with "path" and "content" keys
+        description: Brief description of the application (default: "")
     
     Returns:
         A dictionary containing the result of the operation
+
+    After this, consider how you want to change the app to meet the functionality, look at the examples in resources dir if you like.
+    Or, you can replace the content with existing html/css/js files you have (just make sure to leave the goose_api.js file in the app dir)
+
     """
     try:
         # Sanitize app name (replace spaces with hyphens, remove special characters)
@@ -173,177 +183,36 @@ def create_app(app_name: str, app_type: str, description: str, files: List[Dict[
         
         os.makedirs(app_path, exist_ok=True)
         
+        
+        # Copy kitchen-sink template files
+        kitchen_sink_dir = os.path.join(RESOURCES_DIR, "kitchen-sink")
+        copied_files = ["index.html", "style.css", "script.js", "goose_api.js"]
+        
+        for file_name in copied_files:
+            src_file = os.path.join(kitchen_sink_dir, file_name)
+            dest_file = os.path.join(app_path, file_name)
+            shutil.copy2(src_file, dest_file)
+        
         # Create manifest file
         manifest = {
             "name": app_name,
-            "type": app_type,
             "description": description,
             "created": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "files": [f["path"] for f in files]
+            "files": copied_files
         }
         
         with open(os.path.join(app_path, "manifest.json"), 'w') as f:
             json.dump(manifest, f, indent=2)
         
-        # Create all the files
-        for file_info in files:
-            file_path = os.path.join(app_path, file_info["path"])
-            
-            # Create directories if needed
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            
-            # Write file content
-            with open(file_path, 'w') as f:
-                f.write(file_info["content"])
-        
         return {
             "success": True,
             "app_name": safe_app_name,
             "app_path": app_path,
-            "file_count": len(files),
             "message": f"App '{app_name}' created successfully at {app_path}"
         }
     except Exception as e:
         logger.error(f"Error creating app: {e}")
         return {"success": False, "error": f"Failed to create app: {str(e)}"}
-
-@mcp.tool()
-def update_app_file(app_name: str, file_path: str, content: str) -> Dict[str, Any]:
-    """
-    Update or create a file in an existing web application.
-    
-    Args:
-        app_name: Name of the application
-        file_path: Path to the file within the app directory
-        content: New content for the file
-    
-    Returns:
-        A dictionary containing the result of the operation
-    """
-    try:
-        # Find the app directory
-        app_path = os.path.join(APP_DIR, app_name)
-        if not os.path.exists(app_path):
-            return {
-                "success": False, 
-                "error": f"App '{app_name}' not found at {app_path}"
-            }
-        
-        # Create the full file path
-        full_file_path = os.path.join(app_path, file_path)
-        
-        # Create directories if needed
-        os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
-        
-        # Write file content
-        with open(full_file_path, 'w') as f:
-            f.write(content)
-        
-        # Update manifest if it exists
-        manifest_path = os.path.join(app_path, "manifest.json")
-        if os.path.exists(manifest_path):
-            try:
-                with open(manifest_path, 'r') as f:
-                    manifest = json.load(f)
-                
-                if "files" not in manifest:
-                    manifest["files"] = []
-                
-                if file_path not in manifest["files"]:
-                    manifest["files"].append(file_path)
-                    manifest["updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                    
-                    with open(manifest_path, 'w') as f:
-                        json.dump(manifest, f, indent=2)
-            except Exception as e:
-                logger.warning(f"Error updating manifest: {e}")
-        
-        return {
-            "success": True,
-            "app_name": app_name,
-            "file_path": file_path,
-            "full_path": full_file_path,
-            "message": f"File '{file_path}' updated successfully in app '{app_name}'"
-        }
-    except Exception as e:
-        logger.error(f"Error updating app file: {e}")
-        return {"success": False, "error": f"Failed to update file: {str(e)}"}
-
-@mcp.tool()
-def view_app_file(app_name: str, file_path: str) -> Dict[str, Any]:
-    """
-    View the content of a file in an existing web application.
-    
-    Args:
-        app_name: Name of the application
-        file_path: Path to the file within the app directory
-    
-    Returns:
-        A dictionary containing the content of the file
-    """
-    try:
-        # Find the app directory
-        app_path = os.path.join(APP_DIR, app_name)
-        if not os.path.exists(app_path):
-            return {
-                "success": False, 
-                "error": f"App '{app_name}' not found at {app_path}"
-            }
-        
-        # Create the full file path
-        full_file_path = os.path.join(app_path, file_path)
-        
-        if not os.path.exists(full_file_path):
-            return {
-                "success": False, 
-                "error": f"File '{file_path}' not found in app '{app_name}'"
-            }
-        
-        # Read file content
-        with open(full_file_path, 'r') as f:
-            content = f.read()
-        
-        return {
-            "success": True,
-            "app_name": app_name,
-            "file_path": file_path,
-            "content": content
-        }
-    except Exception as e:
-        logger.error(f"Error viewing app file: {e}")
-        return {"success": False, "error": f"Failed to view file: {str(e)}"}
-
-@mcp.tool()
-def delete_app(app_name: str) -> Dict[str, Any]:
-    """
-    Delete an existing web application.
-    
-    Args:
-        app_name: Name of the application to delete
-    
-    Returns:
-        A dictionary containing the result of the operation
-    """
-    try:
-        # Find the app directory
-        app_path = os.path.join(APP_DIR, app_name)
-        if not os.path.exists(app_path):
-            return {
-                "success": False, 
-                "error": f"App '{app_name}' not found at {app_path}"
-            }
-        
-        # Delete the app directory
-        shutil.rmtree(app_path)
-        
-        return {
-            "success": True,
-            "app_name": app_name,
-            "message": f"App '{app_name}' deleted successfully"
-        }
-    except Exception as e:
-        logger.error(f"Error deleting app: {e}")
-        return {"success": False, "error": f"Failed to delete app: {str(e)}"}
 
 @mcp.tool()
 def serve_app(app_name: str, port: Optional[int] = None) -> Dict[str, Any]:
@@ -512,7 +381,21 @@ def open_app(app_name: str) -> Dict[str, Any]:
         
         # Open the URL in the default browser
         url = f"http://localhost:{server_port}"
-        subprocess.run(["open", url], check=True)
+        
+        # Check if we're on macOS
+        if os.uname().sysname == "Darwin":  # macOS
+            # Use Chrome in app mode
+            chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+            if os.path.exists(chrome_path):
+                logger.info(f"Opening app in Chrome app mode: {url}")
+                subprocess.run([chrome_path, f"--app={url}"], check=True)
+            else:
+                # Fallback to default browser if Chrome is not installed
+                logger.info(f"Chrome not found, opening in default browser: {url}")
+                subprocess.run(["open", url], check=True)
+        else:
+            # For non-macOS systems, use the default browser
+            subprocess.run(["open", url], check=True)
         
         return {
             "success": True,
@@ -523,6 +406,35 @@ def open_app(app_name: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error opening app: {e}")
         return {"success": False, "error": f"Failed to open app: {str(e)}"}
+
+@mcp.tool()
+def refresh_app() -> Dict[str, Any]:
+    """
+    Refresh the currently open app in Chrome.
+    Only works on macOS with Google Chrome.
+    
+    Returns:
+        A dictionary containing the result of the operation
+    """
+    try:
+        # Check if we're on macOS
+        if os.uname().sysname != "Darwin":
+            return {
+                "success": False,
+                "error": "This function is only available on macOS"
+            }
+        
+        # Use AppleScript to refresh the active tab in Chrome
+        refresh_script = 'tell application "Google Chrome" to tell active tab of front window to reload'
+        subprocess.run(["osascript", "-e", refresh_script], check=True)
+        
+        return {
+            "success": True,
+            "message": "App refreshed successfully in Chrome"
+        }
+    except Exception as e:
+        logger.error(f"Error refreshing app: {e}")
+        return {"success": False, "error": f"Failed to refresh app: {str(e)}"}
 
 @mcp.tool()
 def testSendGooseMessage(message: str, session_id: str = "web-client-session", session_working_dir: str = "/tmp") -> Dict[str, Any]:
@@ -615,92 +527,13 @@ def testSendGooseMessage(message: str, session_id: str = "web-client-session", s
             "error": f"Unexpected error: {str(e)}"
         }
 
-def test_tools():
-    """Test the MCP tools with basic commands."""
-    logger.info("Testing Goose App Maker MCP tools")
-    
-    # Test list_apps
-    logger.info("Testing list_apps tool")
-    result = list_apps()
-    logger.info(f"list_apps result: {result}")
-    
-    # Create a test app
-    logger.info("Testing create_app tool")
-    test_files = [
-        {
-            "path": "index.html",
-            "content": """<!DOCTYPE html>
-<html>
-<head>
-    <title>Test App</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <h1>Test App</h1>
-    <p>This is a test app created by Goose App Maker.</p>
-    <script src="script.js"></script>
-</body>
-</html>"""
-        },
-        {
-            "path": "style.css",
-            "content": """body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: #f0f0f0;
-}
-
-h1 {
-    color: #333;
-}"""
-        },
-        {
-            "path": "script.js",
-            "content": """console.log('Test app loaded');
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM fully loaded');
-});"""
-        }
-    ]
-    
-    result = create_app("test-app", "static", "A test application", test_files)
-    logger.info(f"create_app result: {result}")
-    
-    # Test serve_app
-    logger.info("Testing serve_app tool")
-    result = serve_app("test-app")
-    logger.info(f"serve_app result: {result}")
-    
-    # Test open_app
-    logger.info("Testing open_app tool")
-    result = open_app("test-app")
-    logger.info(f"open_app result: {result}")
-    
-    # Test testSendGooseMessage if environment variables are set
-    if os.environ.get('GOOSE_PORT') and os.environ.get('GOOSE_SERVER__SECRET_KEY'):
-        logger.info("Testing testSendGooseMessage tool")
-        result = testSendGooseMessage("Hello from Goose App Maker test!")
-        logger.info(f"testSendGooseMessage result: {result.get('success')}, chunks: {result.get('chunks_count')}")
-    else:
-        logger.info("Skipping testSendGooseMessage test - environment variables not set")
-    
-    # Wait a bit before stopping the server
-    time.sleep(5)
-    
-    # Test stop_server
-    logger.info("Testing stop_server tool")
-    result = stop_server()
-    logger.info(f"stop_server result: {result}")
-
 
 def live_runthrough():
     """Perform a live runthrough that copies the test app files and serves them."""
     logger.info("Starting live runthrough of Goose App Maker")
     
     # Define the source directories
-    test_app_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test-app")
+    test_app_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources/kitchen-sink")
     resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
     
     # Define the destination
@@ -727,7 +560,6 @@ def live_runthrough():
     # Create the manifest file
     manifest = {
         "name": "Goose Demo App",
-        "type": "static",
         "description": "A demo application with interactive features",
         "created": time.strftime("%Y-%m-%d %H:%M:%S"),
         "files": ["index.html", "style.css", "script.js", "goose_api.js"]
@@ -739,7 +571,7 @@ def live_runthrough():
     # Copy the files
     try:
         # Copy test app files (except goose_api.js which will come from resources)
-        for file_name in ["index.html", "style.css", "script.js"]:
+        for file_name in ["index.html", "style.css", "script.js", "goose_api.js"]:
             src_file = os.path.join(test_app_dir, file_name)
             dest_file = os.path.join(dest_dir, file_name)
             
@@ -749,18 +581,7 @@ def live_runthrough():
             else:
                 logger.error(f"Source file '{src_file}' does not exist")
                 return False
-        
-        # Copy goose_api.js from resources directory
-        resources_api_file = os.path.join(resources_dir, "goose_api.js")
-        dest_api_file = os.path.join(dest_dir, "goose_api.js")
-        
-        if os.path.exists(resources_api_file):
-            logger.info(f"Copying goose_api.js from resources to {dest_api_file}")
-            shutil.copy2(resources_api_file, dest_api_file)
-        else:
-            logger.error(f"Resources API file '{resources_api_file}' does not exist")
-            return False
-        
+                
         logger.info(f"Successfully copied all files to {dest_dir}")
         
         # Serve the app

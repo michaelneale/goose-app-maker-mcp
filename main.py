@@ -361,13 +361,13 @@ def create_app(app_name: str, description: str = "") -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to create app: {str(e)}"}
 
 @mcp.tool()
-def serve_app(app_name: str, port: Optional[int] = None) -> Dict[str, Any]:
+def serve_app(app_name: str) -> Dict[str, Any]:
     """
     Serve an existing web application on a local HTTP server.
+    The server will automatically find an available port.
     
     Args:
         app_name: Name of the application to serve
-        port: Optional port number (default: 8000)
     
     Returns:
         A dictionary containing the result of the operation
@@ -390,9 +390,21 @@ def serve_app(app_name: str, port: Optional[int] = None) -> Dict[str, Any]:
             http_server.server_close()
             http_server = None
         
-        # Set the port
-        if port:
-            server_port = port
+        # Find a free port
+        import socket
+        def find_free_port():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('', 0))
+                return s.getsockname()[1]
+        
+        # Try the default port first, if busy find a free one
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('', server_port))
+        except OSError:
+            logger.info(f"Default port {server_port} is busy, finding a free port")
+            server_port = find_free_port()
+            logger.info(f"Found free port: {server_port}")
         
         # Create a custom handler that serves from the app directory
         # and replaces environment variables in JavaScript files
@@ -445,28 +457,48 @@ def serve_app(app_name: str, port: Optional[int] = None) -> Dict[str, Any]:
         # Start the server in a separate thread
         import threading
         
+        # Use a thread-safe event to signal when the server is ready
+        server_ready = threading.Event()
+        server_error = [None]  # Use a list to store error from thread
+        
         def run_server():
             global http_server
             try:
                 with socketserver.TCPServer(("", server_port), EnvAwareHandler) as server:
                     http_server = server
+                    # Signal that server is ready
+                    server_ready.set()
                     logger.info(f"Serving app '{app_name}' at http://localhost:{server_port}")
                     logger.info(f"Using GOOSE_PORT={os.environ.get('GOOSE_PORT', '3000')}")
                     logger.info(f"Using GOOSE_SERVER__SECRET_KEY={os.environ.get('GOOSE_SERVER__SECRET_KEY', '')[:5]}...")
                     server.serve_forever()
             except Exception as e:
+                server_error[0] = str(e)
+                server_ready.set()  # Signal even on error
                 logger.error(f"Server error: {e}")
         
         server_thread = threading.Thread(target=run_server)
         server_thread.daemon = True
         server_thread.start()
         
-        # Wait a moment for the server to start
-        time.sleep(1)
+        # Wait for the server to start or fail, with timeout
+        if not server_ready.wait(timeout=2.0):
+            return {
+                "success": False,
+                "error": "Server failed to start within timeout period"
+            }
+           
+        # Check if there was an error
+        if server_error[0]:
+            return {
+                "success": False,
+                "error": f"Failed to serve app: {server_error[0]}"
+            }
         
         return {
             "success": True,
             "app_name": app_name,
+            "port": server_port,
             "url": f"http://localhost:{server_port}",
             "message": f"App '{app_name}' is now being served at http://localhost:{server_port}"
         }
@@ -531,9 +563,11 @@ def open_app(app_name: str) -> Dict[str, Any]:
             serve_result = serve_app(app_name)
             if not serve_result["success"]:
                 return serve_result
-        
-        # Open the URL in the default browser
-        url = f"http://localhost:{server_port}"
+            # Get the URL from the serve result
+            url = serve_result["url"]
+        else:
+            # Use the current server port
+            url = f"http://localhost:{server_port}"
         
         # Check if we're on macOS
         if os.uname().sysname == "Darwin":  # macOS
@@ -656,7 +690,7 @@ def live_runthrough():
             open_result = open_app(app_name)
             
             if open_result["success"]:
-                logger.info("Demo app opened successfully")
+                logger.info(f"Demo app opened successfully at {serve_result['url']}")
                 logger.info("Press Ctrl+C to stop the server and exit")
                 
                 # Keep the server running until interrupted

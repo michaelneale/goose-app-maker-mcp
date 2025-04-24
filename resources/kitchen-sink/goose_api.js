@@ -151,13 +151,13 @@ async function getCompleteResponse(message, format="text", options = {}) {
 
   switch (format) {
     case "markdown":
-      message = message + "\n\n# IMPORTANT: please format your response as markdown, return only the markdown as requested";
+      message = message + "\n\n# CRITICAL: please format your response as markdown, return only the markdown as requested, no other responses";
       break;
     case "json":  
-      message = message + "\n\n# IMPORTANT: please format your response as json only, no other information, a simple mapping of name/value pairs, such as {\"key 1\": \"value 1\", \"key 2\": \"value 2\"}:";
+      message = message + "\n\n# CRITICAL: please format your response as json only, no other responses, a simple mapping of name/value pairs, such as {\"key 1\": \"value 1\", \"key 2\": \"value 2\"}:";
       break;
     case "list": 
-      message = message + "\n\n# IMPORTANT: please format your response as json list, and return no other data, such as ['item 1', 'item 2']:";
+      message = message + "\n\n# CRITICAL: please format your response as json list, no other responses, and return no other data, such as ['item 1', 'item 2']:";
   }
 
   const response = await sendGooseRequest(message, options);
@@ -211,6 +211,26 @@ async function getCompleteResponse(message, format="text", options = {}) {
           }
         }
       }
+    }
+    
+    // Extract content from code blocks if present
+    // Check for code blocks with specific language tags like ```json or ```markdown
+    const extractCodeBlock = (text, language) => {
+      const regex = new RegExp(`\`\`\`${language}\\s*([\\s\\S]*?)\\s*\`\`\``, 'i');
+      const match = text.match(regex);
+      return match ? match[1] : null;
+    };
+    
+    // Try to extract JSON content
+    const jsonContent = extractCodeBlock(completeText, 'json');
+    if (jsonContent) {
+      return jsonContent;
+    }
+    
+    // Try to extract Markdown content
+    const markdownContent = extractCodeBlock(completeText, 'markdown');
+    if (markdownContent) {
+      return markdownContent;
     }
     
     return completeText;

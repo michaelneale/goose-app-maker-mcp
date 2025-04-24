@@ -42,6 +42,11 @@ function initGooseApi() {
             const response = await getCompleteResponse(message, format='list')
 
             responseContainer.textContent = response;
+
+            const response2 = await getCompleteResponse(message, format='markdown')
+
+            responseContainer.textContent += response2;
+
             
         } catch (error) {
             console.error('Error:', error);

@@ -252,6 +252,13 @@ def serve_app(app_name: str, port: Optional[int] = None) -> Dict[str, Any]:
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, directory=app_path, **kwargs)
             
+            def end_headers(self):
+                # Add cache control headers to ALL responses
+                self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+                self.send_header('Pragma', 'no-cache')
+                self.send_header('Expires', '0')
+                super().end_headers()
+            
             def do_GET(self):
                 # Get the file path
                 path = self.translate_path(self.path)
@@ -278,34 +285,11 @@ def serve_app(app_name: str, port: Optional[int] = None) -> Dict[str, Any]:
                                 self.send_response(200)
                                 self.send_header('Content-type', 'application/javascript')
                                 self.send_header('Content-Length', str(len(content)))
-                                self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-                                self.send_header('Pragma', 'no-cache')
-                                self.send_header('Expires', '0')
-
                                 self.end_headers()
                                 self.wfile.write(content.encode('utf-8'))
                                 return
                         except Exception as e:
                             logger.error(f"Error processing JavaScript file: {e}")
-                    
-                    # Add cache control headers for CSS files to prevent caching
-                    elif path.endswith('.css'):
-                        try:
-                            with open(path, 'r') as f:
-                                content = f.read()
-                            
-                            # Send the content with no-cache headers
-                            self.send_response(200)
-                            self.send_header('Content-type', 'text/css')
-                            self.send_header('Content-Length', str(len(content)))
-                            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-                            self.send_header('Pragma', 'no-cache')
-                            self.send_header('Expires', '0')
-                            self.end_headers()
-                            self.wfile.write(content.encode('utf-8'))
-                            return
-                        except Exception as e:
-                            logger.error(f"Error processing CSS file: {e}")
                 
                 # If we didn't handle it specially, use the default handler
                 return super().do_GET()

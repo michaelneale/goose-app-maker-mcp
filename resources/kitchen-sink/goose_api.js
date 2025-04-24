@@ -8,10 +8,14 @@
  * 1. Include this file in your HTML:
  *    <script src="goose_api.js"></script>
  * 
- * 2. Send a request to the Goose API:
+ * 2. To get a complete response as a single text:
+ *    const text = await getCompleteResponse("your message here");*
+ *    OR you can use the following options for streaming which gets chunks of data back
+ * 
+ * 3. Send a request to the Goose API:
  *    const response = await sendGooseRequest("your message here");
  * 
- * 3. Process the streaming response:
+ * 4. Process the streaming response:
  *    await processStreamingResponse(response, (chunk) => {
  *      console.log("Received chunk:", chunk);
  *    });
@@ -100,6 +104,8 @@ async function processStreamingResponse(response, onChunk) {
       
       // Decode and process the chunk
       const chunk = decoder.decode(value, { stream: true });
+
+      console.log("Received chunk:", chunk);
       
       // Call the callback with the chunk
       if (onChunk && typeof onChunk === 'function') {
@@ -108,6 +114,154 @@ async function processStreamingResponse(response, onChunk) {
     }
   } catch (error) {
     console.error('Error processing stream:', error);
+    throw error;
+  }
+}
+
+/**
+ * Parse a single SSE data chunk
+ * @param {string} chunk - The SSE data chunk
+ * @returns {object|null} Parsed JSON object or null if not valid
+ */
+function parseSSEChunk(chunk) {
+  // Each SSE chunk starts with "data: " and ends with "\n\n"
+  if (!chunk.startsWith('data: ')) {
+    return null;
+  }
+  
+  // Extract the JSON part
+  const jsonStr = chunk.substring(6).trim();
+  
+  try {
+    return JSON.parse(jsonStr);
+  } catch (error) {
+    console.error('Error parsing SSE chunk:', error);
+    return null;
+  }
+}
+
+/**
+ * Get a complete response as a single text by assembling all assistant messages
+ * @param {string} message - The message to send
+ * @param {object} options - Options for the request
+ * @returns {Promise<string>} The complete assistant response text
+ */
+async function getCompleteResponse(message, options = {}) {
+  const response = await sendGooseRequest(message, options);
+  
+  // Initialize variables to store the complete response
+  let completeText = '';
+  let isFinished = false;
+  
+  // Process the stream and collect all assistant messages
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  
+  try {
+    while (!isFinished) {
+      const { done, value } = await reader.read();
+      
+      if (done) {
+        break;
+      }
+      
+      // Decode the chunk and add it to the buffer
+      const chunk = decoder.decode(value, { stream: true });
+      buffer += chunk;
+      
+      // Process complete SSE messages (they end with double newlines)
+      const messages = buffer.split('\n\n');
+      buffer = messages.pop() || ''; // Keep the last incomplete chunk in the buffer
+      
+      for (const message of messages) {
+        if (!message.trim()) continue;
+        
+        const parsedData = parseSSEChunk(message);
+        if (!parsedData) continue;
+        
+        // Check if this is a finish message
+        if (parsedData.type === 'Finish') {
+          isFinished = true;
+          continue;
+        }
+        
+        // Extract text content from assistant messages
+        if (parsedData.type === 'Message' && 
+            parsedData.message && 
+            parsedData.message.role === 'assistant') {
+          
+          for (const content of parsedData.message.content || []) {
+            if (content.type === 'text') {
+              completeText += content.text;
+            }
+          }
+        }
+      }
+    }
+    
+    return completeText;
+    
+  } catch (error) {
+    console.error('Error processing complete response:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get a complete response with all messages and events
+ * @param {string} message - The message to send
+ * @param {object} options - Options for the request
+ * @returns {Promise<Array>} Array of all parsed messages and events
+ */
+async function getCompleteResponseWithMessages(message, options = {}) {
+  const response = await sendGooseRequest(message, options);
+  
+  // Initialize array to store all messages
+  const allMessages = [];
+  let isFinished = false;
+  
+  // Process the stream and collect all messages
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  
+  try {
+    while (!isFinished) {
+      const { done, value } = await reader.read();
+      
+      if (done) {
+        break;
+      }
+      
+      // Decode the chunk and add it to the buffer
+      const chunk = decoder.decode(value, { stream: true });
+      buffer += chunk;
+      
+      // Process complete SSE messages (they end with double newlines)
+      const messages = buffer.split('\n\n');
+      buffer = messages.pop() || ''; // Keep the last incomplete chunk in the buffer
+      
+      for (const message of messages) {
+        if (!message.trim()) continue;
+        
+        const parsedData = parseSSEChunk(message);
+        if (!parsedData) continue;
+        
+        // Add the parsed message to our collection
+        allMessages.push(parsedData);
+        
+        // Check if this is a finish message
+        if (parsedData.type === 'Finish') {
+          isFinished = true;
+        }
+      }
+    }
+    
+    return allMessages;
+    
+  } catch (error) {
+    console.error('Error processing complete response with messages:', error);
     throw error;
   }
 }

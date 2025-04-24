@@ -35,18 +35,13 @@ function initGooseApi() {
         
         try {
             // Send the request using our goose_api.js client
-            const response = await sendGooseRequest(message);
             
             // Clear the loading message
             responseContainer.innerHTML = '';
             
-            // Process the streaming response
-            await processStreamingResponse(response, (chunk) => {
-                // Append each chunk to the response container
-                responseContainer.textContent += chunk;
-                // Auto-scroll to the bottom
-                responseContainer.scrollTop = responseContainer.scrollHeight;
-            });
+            const response = await getCompleteResponse(message)
+
+            responseContainer.textContent = response2;
             
         } catch (error) {
             console.error('Error:', error);

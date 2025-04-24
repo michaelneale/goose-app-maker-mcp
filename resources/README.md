@@ -16,9 +16,9 @@ A richer interactive app for performance reporting (but visually basic)
 
 A basic but more complete example including how to dynamically fetch data from goose in the app
 
-### goose_api.js
+### kitchen-sink/goose_api.js
 
-A JavaScript client for interacting with the Goose API. This client handles sending requests and processing streaming responses, use this for web apps that need dynamic data by copying it next to other files as needed.
+A JavaScript client for interacting with the Goose API. This client handles sending requests and processing streaming responses, use this for web apps that need dynamic data by copying it next to other files as needed. This would usually be copied in to the root of each app dir for usage by the web apps
 
 #### Usage
 
@@ -29,13 +29,5 @@ A JavaScript client for interacting with the Goose API. This client handles send
 
 2. Send a request to the Goose API:
    ```javascript
-   const response = await sendGooseRequest("your message here");
-   ```
-
-3. Process the streaming response:
-   ```javascript
-   await processStreamingResponse(response, (chunk) => {
-     console.log("Received chunk:", chunk);
-     // Update UI with the chunk
-   });
+     const text = await getCompleteResponse("your message here");
    ```

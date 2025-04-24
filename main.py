@@ -575,14 +575,23 @@ def open_app(app_name: str) -> Dict[str, Any]:
             chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
             if os.path.exists(chrome_path):
                 logger.info(f"Opening app in Chrome app mode: {url}")
-                subprocess.run([chrome_path, f"--app={url}"], check=True)
+                # Use Popen instead of run to avoid blocking
+                subprocess.Popen([chrome_path, f"--app={url}"], 
+                                 stdout=subprocess.DEVNULL, 
+                                 stderr=subprocess.DEVNULL)
             else:
                 # Fallback to default browser if Chrome is not installed
                 logger.info(f"Chrome not found, opening in default browser: {url}")
-                subprocess.run(["open", url], check=True)
+                # Use Popen instead of run to avoid blocking
+                subprocess.Popen(["open", url], 
+                                 stdout=subprocess.DEVNULL, 
+                                 stderr=subprocess.DEVNULL)
         else:
             # For non-macOS systems, use the default browser
-            subprocess.run(["open", url], check=True)
+            # Use Popen instead of run to avoid blocking
+            subprocess.Popen(["open", url], 
+                             stdout=subprocess.DEVNULL, 
+                             stderr=subprocess.DEVNULL)
         
         return {
             "success": True,
@@ -613,7 +622,10 @@ def refresh_app() -> Dict[str, Any]:
         
         # Use AppleScript to refresh the active tab in Chrome
         refresh_script = 'tell application "Google Chrome" to tell active tab of front window to reload'
-        subprocess.run(["osascript", "-e", refresh_script], check=True)
+        # Use Popen instead of run to avoid blocking
+        subprocess.Popen(["osascript", "-e", refresh_script], 
+                         stdout=subprocess.DEVNULL, 
+                         stderr=subprocess.DEVNULL)
         
         return {
             "success": True,

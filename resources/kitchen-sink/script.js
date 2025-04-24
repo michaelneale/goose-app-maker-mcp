@@ -39,9 +39,9 @@ function initGooseApi() {
             // Clear the loading message
             responseContainer.innerHTML = '';
             
-            const response = await getCompleteResponse(message, format='list')
+            await sendGooseRequest(message, format='list')
 
-            responseContainer.textContent = response;
+            // TODO: need to wait for the response to be available and then set it to the responseContainer
 
 
             

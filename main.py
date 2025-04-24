@@ -689,22 +689,44 @@ def refresh_app() -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to refresh app: {str(e)}"}
 
 @mcp.tool()
-def app_response_str(response_id: str, response_data: str) -> Dict[str, Any]:
+def app_response(response_id: str, 
+                string_data: str = None, 
+                list_data: List[str] = None, 
+                table_data: Dict[str, List] = None) -> bool:
     """
-    Use this to return a string response to the app that has been requested.
+    Use this to return a response to the app that has been requested.
+    Provide only one of string_data, list_data, or table_data.
     
     Args:
         response_id: Unique identifier for the response
-        response_data: String data to store
+        string_data: Optional string response
+        list_data: Optional list of strings response
+        table_data: Optional table response with columns and rows
+                    Format: {"columns": ["col1", "col2", ...], "rows": [["row1col1", "row1col2", ...], ...]}
     
     Returns:
-        A dictionary containing the result of the operation
+        True if the response was stored successfully, False otherwise
     """
     global app_responses, response_locks
     
     try:
-        # Store the response in the global dictionary
-        app_responses[response_id] = response_data
+        # Check that exactly one data type is provided
+        provided_data = [d for d in [string_data, list_data, table_data] if d is not None]
+        if len(provided_data) != 1:
+            logger.error("Exactly one of string_data, list_data, or table_data must be provided")
+            return False
+        
+        # Determine the type of data and store it
+        if string_data is not None:
+            app_responses[response_id] = string_data
+        elif list_data is not None:
+            app_responses[response_id] = list_data
+        elif table_data is not None:
+            # Validate table_data format
+            if not isinstance(table_data, dict) or "columns" not in table_data or "rows" not in table_data:
+                logger.error("Table data must have 'columns' and 'rows' keys")
+                return False
+            app_responses[response_id] = table_data
         
         # Notify any waiting threads
         if response_id in response_locks:
@@ -712,82 +734,10 @@ def app_response_str(response_id: str, response_data: str) -> Dict[str, Any]:
                 response_locks[response_id][1] = True
                 response_locks[response_id][0].notify_all()
         
-        return {
-            "success": True,
-            "response_id": response_id,
-            "message": f"String response stored successfully with ID '{response_id}'"
-        }
+        return True
     except Exception as e:
-        logger.error(f"Error storing string response: {e}")
-        return {"success": False, "error": f"Failed to store response: {str(e)}"}
-
-@mcp.tool()
-def app_response_list(response_id: str, response_data: List[str]) -> Dict[str, Any]:
-    """
-    Use this to return a list of strings response to the app that has been requested.
-    
-    Args:
-        response_id: Unique identifier for the response
-        response_data: List of strings to store
-    
-    Returns:
-        A dictionary containing the result of the operation
-    """
-    global app_responses, response_locks
-    
-    try:
-        # Store the response in the global dictionary
-        app_responses[response_id] = response_data
-        
-        # Notify any waiting threads
-        if response_id in response_locks:
-            with response_locks[response_id][0]:
-                response_locks[response_id][1] = True
-                response_locks[response_id][0].notify_all()
-        
-        return {
-            "success": True,
-            "response_id": response_id,
-            "count": len(response_data),
-            "message": f"List response stored successfully with ID '{response_id}'"
-        }
-    except Exception as e:
-        logger.error(f"Error storing list response: {e}")
-        return {"success": False, "error": f"Failed to store response: {str(e)}"}
-
-@mcp.tool()
-def app_response_table(response_id: str, response_data: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Use this to return a table response (list of JSON objects) to the app that has been requested.
-    
-    Args:
-        response_id: Unique identifier for the response
-        response_data: List of JSON objects (each representing a row in a table)
-    
-    Returns:
-        A dictionary containing the result of the operation
-    """
-    global app_responses, response_locks
-    
-    try:
-        # Store the response in the global dictionary
-        app_responses[response_id] = response_data
-        
-        # Notify any waiting threads
-        if response_id in response_locks:
-            with response_locks[response_id][0]:
-                response_locks[response_id][1] = True
-                response_locks[response_id][0].notify_all()
-        
-        return {
-            "success": True,
-            "response_id": response_id,
-            "rows": len(response_data),
-            "message": f"Table response stored successfully with ID '{response_id}'"
-        }
-    except Exception as e:
-        logger.error(f"Error storing table response: {e}")
-        return {"success": False, "error": f"Failed to store response: {str(e)}"}
+        logger.error(f"Error storing response: {e}")
+        return False
 
 
 def live_runthrough():

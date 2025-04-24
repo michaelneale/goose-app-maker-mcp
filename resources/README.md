@@ -29,5 +29,5 @@ A JavaScript client for interacting with the Goose API. This client handles send
 
 2. Send a request to the Goose API:
    ```javascript
-     const text = await getCompleteResponse("your message here");
+     await getCompleteResponse("your message here");
    ```

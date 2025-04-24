@@ -7,7 +7,6 @@ import json
 import shutil
 import http.server
 import socketserver
-import requests
 from typing import Dict, Any, Optional
 from pathlib import Path
 
@@ -28,7 +27,7 @@ logger.info(f"Using app directory: {APP_DIR}")
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 RESOURCES_DIR = os.path.join(SCRIPT_DIR, "resources")
 README_PATH = os.path.join(SCRIPT_DIR, "README.md")
-GOOSE_API_PATH = os.path.join(RESOURCES_DIR, "goose_api.js")
+GOOSE_API_PATH = os.path.join(RESOURCES_DIR, "kitchen-sink/goose_api.js")
 
 # Global variable to store the HTTP server instance
 http_server = None
@@ -61,8 +60,9 @@ When generating web apps:
 
 Each app is stored in its own directory within ~/.config/goose/app-maker-apps.
 
-Once an app is created, you can modify its files using the usual developer tools (eg text_editor) directly.
-Look in directory at ~/.config/goose/app-maker-apps/[app-name]/
+Once an app is created, you can modify or replace contents of its files using tools available. Typically there is an index.html, style.css, and script.js file (and the goose_api.js helper) - but you don't have to stick to this structure if you know better.
+
+The directory ~/.config/goose/app-maker-apps/[app-name]/ is where the app is stored.
 
 Resources:
 - The resources directory is located at: {resources_dir} which has utilities and examples you can refer to.
@@ -71,7 +71,16 @@ Resources:
   - This script provides methods to communicate with the Goose API
   - When served, environment variables like $GOOSE_PORT and $GOOSE_SERVER__SECRET_KEY are automatically replaced with actual values
   - include that with app files, placed next to them
-  - When using sendGooseRequest(message) - the message should clearly specify the desire result format. Usually markdown is recommended.    
+  - When using sendGooseRequest(message) - the message should clearly specify the desired format (list, markdown, json - default will return just a text value which is also useful)
+
+  Some of the tools available:
+
+    create_app - use this when starting new
+    list_apps - find existing apps 
+    serve_app - serve an app locally
+    open_app - open an app in a browser (macos)
+    update_app_file - update a file in an app
+    view_app_file - view a file in an app
 
 
 """
@@ -148,6 +157,145 @@ def list_apps() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error listing apps: {e}")
         return {"success": False, "error": f"Failed to list apps: {str(e)}"}
+    
+@mcp.tool()
+def update_app_file(app_name: str, file_path: str, content: str) -> Dict[str, Any]:
+    """
+    Update or create a file in an existing web application.
+    
+    Args:
+        app_name: Name of the application
+        file_path: Path to the file within the app directory
+        content: New content for the file
+    
+    Returns:
+        A dictionary containing the result of the operation
+    """
+    try:
+        # Find the app directory
+        app_path = os.path.join(APP_DIR, app_name)
+        if not os.path.exists(app_path):
+            return {
+                "success": False, 
+                "error": f"App '{app_name}' not found at {app_path}"
+            }
+        
+        # Create the full file path
+        full_file_path = os.path.join(app_path, file_path)
+        
+        # Create directories if needed
+        os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
+        
+        # Write file content
+        with open(full_file_path, 'w') as f:
+            f.write(content)
+        
+        # Update manifest if it exists
+        manifest_path = os.path.join(app_path, "manifest.json")
+        if os.path.exists(manifest_path):
+            try:
+                with open(manifest_path, 'r') as f:
+                    manifest = json.load(f)
+                
+                if "files" not in manifest:
+                    manifest["files"] = []
+                
+                if file_path not in manifest["files"]:
+                    manifest["files"].append(file_path)
+                    manifest["updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    with open(manifest_path, 'w') as f:
+                        json.dump(manifest, f, indent=2)
+            except Exception as e:
+                logger.warning(f"Error updating manifest: {e}")
+        
+        return {
+            "success": True,
+            "app_name": app_name,
+            "file_path": file_path,
+            "full_path": full_file_path,
+            "message": f"File '{file_path}' updated successfully in app '{app_name}'"
+        }
+    except Exception as e:
+        logger.error(f"Error updating app file: {e}")
+        return {"success": False, "error": f"Failed to update file: {str(e)}"}
+
+@mcp.tool()
+def view_app_file(app_name: str, file_path: str) -> Dict[str, Any]:
+    """
+    View the content of a file in an existing web application.
+    
+    Args:
+        app_name: Name of the application
+        file_path: Path to the file within the app directory
+    
+    Returns:
+        A dictionary containing the content of the file
+    """
+    try:
+        # Find the app directory
+        app_path = os.path.join(APP_DIR, app_name)
+        if not os.path.exists(app_path):
+            return {
+                "success": False, 
+                "error": f"App '{app_name}' not found at {app_path}"
+            }
+        
+        # Create the full file path
+        full_file_path = os.path.join(app_path, file_path)
+        
+        if not os.path.exists(full_file_path):
+            return {
+                "success": False, 
+                "error": f"File '{file_path}' not found in app '{app_name}'"
+            }
+        
+        # Read file content
+        with open(full_file_path, 'r') as f:
+            content = f.read()
+        
+        return {
+            "success": True,
+            "app_name": app_name,
+            "file_path": file_path,
+            "content": content
+        }
+    except Exception as e:
+        logger.error(f"Error viewing app file: {e}")
+        return {"success": False, "error": f"Failed to view file: {str(e)}"}
+
+@mcp.tool()
+def delete_app(app_name: str) -> Dict[str, Any]:
+    """
+    Delete an existing web application.
+    
+    Args:
+        app_name: Name of the application to delete
+    
+    Returns:
+        A dictionary containing the result of the operation
+    """
+    try:
+        # Find the app directory
+        app_path = os.path.join(APP_DIR, app_name)
+        if not os.path.exists(app_path):
+            return {
+                "success": False, 
+                "error": f"App '{app_name}' not found at {app_path}"
+            }
+        
+        # Delete the app directory
+        shutil.rmtree(app_path)
+        
+        return {
+            "success": True,
+            "app_name": app_name,
+            "message": f"App '{app_name}' deleted successfully"
+        }
+    except Exception as e:
+        logger.error(f"Error deleting app: {e}")
+        return {"success": False, "error": f"Failed to delete app: {str(e)}"}
+
 
 @mcp.tool()
 def create_app(app_name: str, description: str = "") -> Dict[str, Any]:

@@ -144,7 +144,6 @@ function parseSSEChunk(chunk) {
  * Get a complete response as a single text by assembling all assistant messages
  * @param {string} message - The message to send
  * @param {string} format - preferred format for the response (e.g., "text", "json", "list", "markdown")
- * @param {object} options - Options for the request
  * @returns {Promise<string>} The complete assistant response text
  */
 async function getCompleteResponse(message, format="text", options = {}) {

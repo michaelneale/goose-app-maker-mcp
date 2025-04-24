@@ -39,9 +39,9 @@ function initGooseApi() {
             // Clear the loading message
             responseContainer.innerHTML = '';
             
-            const response = await getCompleteResponse(message)
+            const response = await getCompleteResponse(message, format='list')
 
-            responseContainer.textContent = response2;
+            responseContainer.textContent = response;
             
         } catch (error) {
             console.error('Error:', error);

@@ -71,9 +71,7 @@ Resources:
   - This script provides methods to communicate with the Goose API
   - When served, environment variables like $GOOSE_PORT and $GOOSE_SERVER__SECRET_KEY are automatically replaced with actual values
   - include that with app files, placed next to them
-  - When using sendGooseRequest(message) - the message should clearly specify the desire result format
-    - use the `testSendGooseMessage` tool to validate with some exmaple queries and prompts to get the result your app needs and iterate.
-    - when building the app use testSendGooseMessage tool with example queries and prompts appented to ensure the result data format is what you require in the app (markdown or simple json lists/objects can work)
+  - When using sendGooseRequest(message) - the message should clearly specify the desire result format. Usually markdown is recommended.    
 
 
 """
@@ -458,97 +456,6 @@ def refresh_app() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error refreshing app: {e}")
         return {"success": False, "error": f"Failed to refresh app: {str(e)}"}
-
-@mcp.tool()
-def testSendGooseMessage(message: str, session_id: str = "web-client-session", session_working_dir: str = "/tmp") -> Dict[str, Any]:
-    """
-    Send a message to the Goose API and return the response.
-    This is a Python implementation of the functionality in goose_api.js.
-    
-    Args:
-        message: The message to send to Goose
-        session_id: Optional session ID (default: "web-client-session")
-        session_working_dir: Optional working directory for the session (default: "/tmp")
-    
-    Returns:
-        A dictionary containing the result of the operation and the response
-    """
-    import os
-    import time
-    
-    try:
-        # Get environment variables
-        goose_port = os.environ.get('GOOSE_PORT', '3000')
-        secret_key = os.environ.get('GOOSE_SERVER__SECRET_KEY', '')
-        
-        logger.info(f"Using GOOSE_PORT={goose_port}")
-        logger.info(f"Using GOOSE_SERVER__SECRET_KEY={secret_key[:5]}..." if secret_key else "No secret key found")
-        
-        # Create the request body
-        request_body = {
-            "messages": [
-                {
-                    "role": "user",
-                    "created": int(time.time()),
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": message
-                        }
-                    ]
-                }
-            ],
-            "session_id": session_id,
-            "session_working_dir": session_working_dir
-        }
-        
-        logger.info(f"Sending request to goose-server on port {goose_port}")
-        logger.info(f"Request body: {json.dumps(request_body, indent=2)}")
-        
-        # Send the request
-        response = requests.post(
-            f"http://localhost:{goose_port}/reply",
-            headers={
-                "Content-Type": "application/json",
-                "X-Secret-Key": secret_key
-            },
-            json=request_body,
-            stream=True  # Enable streaming response
-        )
-        
-        # Check if the response is ok
-        response.raise_for_status()
-        
-        # Process the streaming response
-        chunks = []
-        for chunk in response.iter_content(chunk_size=1024, decode_unicode=False):
-            if chunk:
-                # Decode the chunk
-                decoded_chunk = chunk.decode('utf-8')
-                chunks.append(decoded_chunk)
-                logger.info(f"Received chunk: {decoded_chunk[:100]}..." if len(decoded_chunk) > 100 else f"Received chunk: {decoded_chunk}")
-        
-        full_response = ''.join(chunks)
-        
-        return {
-            "success": True,
-            "message": "Successfully sent message to Goose API",
-            "response": full_response,
-            "chunks_count": len(chunks)
-        }
-        
-    except requests.RequestException as e:
-        logger.error(f"Error sending request to Goose API: {e}")
-        return {
-            "success": False,
-            "error": f"Failed to send message to Goose API: {str(e)}"
-        }
-    except Exception as e:
-        logger.error(f"Unexpected error in testSendGooseMessage: {e}")
-        return {
-            "success": False,
-            "error": f"Unexpected error: {str(e)}"
-        }
 
 
 def live_runthrough():

@@ -9,7 +9,7 @@
  *    <script src="goose_api.js"></script>
  * 
  * 2. To get a complete response as a single text:
- *    const text = await getCompleteResponse("your message here");*
+ *    const text = await getCompleteResponse("your message here");
  *    OR you can use the following options for streaming which gets chunks of data back
  * 
  * 3. Send a request to the Goose API:
@@ -36,7 +36,7 @@ const GOOSE_SERVER__SECRET_KEY = '$GOOSE_SERVER__SECRET_KEY';
 async function sendGooseRequest(message, options = {}) {
   // Default options
   const defaults = {
-    sessionId: 'web-client-session',
+    //sessionId: 'web-client-session',
     sessionWorkingDir: '/tmp'
   };
   
@@ -143,10 +143,23 @@ function parseSSEChunk(chunk) {
 /**
  * Get a complete response as a single text by assembling all assistant messages
  * @param {string} message - The message to send
+ * @param {string} format - preferred format for the response (e.g., "text", "json", "list", "markdown")
  * @param {object} options - Options for the request
  * @returns {Promise<string>} The complete assistant response text
  */
-async function getCompleteResponse(message, options = {}) {
+async function getCompleteResponse(message, format="text", options = {}) {
+
+  switch (format) {
+    case "markdown":
+      message = message + "\n\n# IMPORTANT: please format your response as markdown, return only the markdown as requested";
+      break;
+    case "json":  
+      message = message + "\n\n# IMPORTANT: please format your response as json only, no other information, a simple mapping of name/value pairs, such as {\"key 1\": \"value 1\", \"key 2\": \"value 2\"}:";
+      break;
+    case "list": 
+      message = message + "\n\n# IMPORTANT: please format your response as json list, and return no other data, such as ['item 1', 'item 2']:";
+  }
+
   const response = await sendGooseRequest(message, options);
   
   // Initialize variables to store the complete response

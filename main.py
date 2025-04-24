@@ -269,7 +269,7 @@ def serve_app(app_name: str, port: Optional[int] = None) -> Dict[str, Any]:
                             # Check if the file contains environment variables that need to be replaced
                             if '$GOOSE_PORT' in content or '$GOOSE_SERVER__SECRET_KEY' in content:
                                 # Replace environment variables
-                                goose_port = os.environ.get('GOOSE_PORT', '3000')
+                                goose_port = os.environ.get('GOOSE_PORT', '0')
                                 secret_key = os.environ.get('GOOSE_SERVER__SECRET_KEY', '')
                                 
                                 # Replace variables
@@ -576,7 +576,7 @@ def live_runthrough():
             dest_file = os.path.join(dest_dir, file_name)
             
             if os.path.exists(src_file):
-                logger.info(f"Copying {file_name} from test-app to {dest_file}")
+                logger.info(f"Copying {file_name} from {src_file} to {dest_file}")
                 shutil.copy2(src_file, dest_file)
             else:
                 logger.error(f"Source file '{src_file}' does not exist")
@@ -623,13 +623,11 @@ def main():
 
     # Check command line arguments
     if len(sys.argv) > 1:
-        if sys.argv[1] == "--test":
-            test_tools()
-        elif sys.argv[1] == "--demo" or sys.argv[1] == "--live":
+        if sys.argv[1] == "--demo" or sys.argv[1] == "--live":
             live_runthrough()
         else:
             print(f"Unknown argument: {sys.argv[1]}")
-            print("Available options: --test, --demo/--live")
+            print("Available options: --demo/--live")
     else:
         # Normal MCP server mode
         logger.info("Starting MCP server...")

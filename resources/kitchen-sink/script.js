@@ -17,6 +17,7 @@ function initGooseApi() {
     const sendButton = document.getElementById('goose-send-btn');
     const clearButton = document.getElementById('goose-clear-btn');
     const responseContainer = document.getElementById('goose-response');
+    const formatSelect = document.getElementById('response-format');
     
     // Add event listeners
     sendButton.addEventListener('click', sendMessage);
@@ -24,6 +25,7 @@ function initGooseApi() {
     
     async function sendMessage() {
         const message = messageInput.value.trim();
+        const format = formatSelect ? formatSelect.value : 'list';
         
         if (!message) {
             showError('Please enter a message');
@@ -34,21 +36,99 @@ function initGooseApi() {
         responseContainer.innerHTML = '<div class="loading-message">Sending request...</div>';
         
         try {
-            // Send the request using our goose_api.js client
+            let response;
             
-            // Clear the loading message
-            responseContainer.innerHTML = '';
-            
-            await sendGooseRequest(message, format='list')
-
-            // TODO: need to wait for the response to be available and then set it to the responseContainer
-
-
+            // Use the appropriate request function based on the selected format
+            switch (format) {
+                case 'text':
+                    response = await gooseRequestText(message);
+                    displayTextResponse(response);
+                    break;
+                    
+                case 'table':
+                    // Define columns for the table based on the query
+                    const tableColumns = determineTableColumns(message);
+                    response = await gooseRequestTable(message, tableColumns);
+                    displayTableResponse(response);
+                    break;
+                    
+                case 'list':
+                default:
+                    response = await gooseRequestList(message);
+                    displayListResponse(response);
+                    break;
+            }
             
         } catch (error) {
             console.error('Error:', error);
             showError(`Error: ${error.message}`);
         }
+    }
+    
+    function displayTextResponse(text) {
+        responseContainer.innerHTML = `<div class="text-response">${text}</div>`;
+    }
+    
+    function displayListResponse(items) {
+        if (!Array.isArray(items) || items.length === 0) {
+            responseContainer.innerHTML = '<div class="empty-response">No items returned</div>';
+            return;
+        }
+        
+        const list = document.createElement('ul');
+        list.className = 'response-list';
+        
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            list.appendChild(li);
+        });
+        
+        responseContainer.innerHTML = '';
+        responseContainer.appendChild(list);
+    }
+    
+    function displayTableResponse(tableData) {
+        if (!tableData || !tableData.columns || !tableData.rows || tableData.rows.length === 0) {
+            responseContainer.innerHTML = '<div class="empty-response">No table data returned</div>';
+            return;
+        }
+        
+        const table = document.createElement('table');
+        table.className = 'response-table';
+        
+        // Create header
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        
+        tableData.columns.forEach(column => {
+            const th = document.createElement('th');
+            th.textContent = column;
+            headerRow.appendChild(th);
+        });
+        
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        
+        // Create body
+        const tbody = document.createElement('tbody');
+        
+        tableData.rows.forEach(row => {
+            const tr = document.createElement('tr');
+            
+            row.forEach(cell => {
+                const td = document.createElement('td');
+                td.textContent = cell;
+                tr.appendChild(td);
+            });
+            
+            tbody.appendChild(tr);
+        });
+        
+        table.appendChild(tbody);
+        
+        responseContainer.innerHTML = '';
+        responseContainer.appendChild(table);
     }
     
     function showError(message) {
@@ -57,6 +137,33 @@ function initGooseApi() {
     
     function clearResponse() {
         responseContainer.innerHTML = '';
+    }
+    
+    // Helper function to determine appropriate table columns based on the query
+    function determineTableColumns(query) {
+        // Default columns if we can't determine better ones
+        const defaultColumns = ["Item", "Description"];
+        
+        // Common column patterns based on query keywords
+        if (/compar(e|ison)|vs\.?|versus/i.test(query)) {
+            return ["Feature", "Option 1", "Option 2"];
+        } else if (/pros?\s+and\s+cons/i.test(query)) {
+            return ["Item", "Pros", "Cons"];
+        } else if (/advantages|benefits/i.test(query)) {
+            return ["Item", "Advantages", "Disadvantages"];
+        } else if (/price|cost|budget/i.test(query)) {
+            return ["Item", "Price", "Description"];
+        } else if (/stat(s|istics)|data|numbers/i.test(query)) {
+            return ["Metric", "Value", "Notes"];
+        } else if (/schedule|time|agenda/i.test(query)) {
+            return ["Time", "Activity", "Details"];
+        } else if (/recipe|ingredient/i.test(query)) {
+            return ["Ingredient", "Amount", "Notes"];
+        } else if (/rank|rating|score/i.test(query)) {
+            return ["Rank", "Item", "Score"];
+        }
+        
+        return defaultColumns;
     }
 }
 

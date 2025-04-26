@@ -19,6 +19,14 @@
                 <div class="goose-container">
                     <div class="goose-input">
                         <textarea id="goose-message" placeholder="Enter your message here...">list files in this dir</textarea>
+                        <div class="input-options">
+                            <label for="response-format">Response format:</label>
+                            <select id="response-format">
+                                <option value="list">List</option>
+                                <option value="text">Text</option>
+                                <option value="table">Table</option>
+                            </select>
+                        </div>
                         <div class="button-row">
                             <button id="goose-send-btn" class="btn">Send Message</button>
                             <button id="goose-clear-btn" class="btn reset-btn">Clear Response</button>

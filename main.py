@@ -740,106 +740,14 @@ def app_response(response_id: str,
         return False
 
 
-def live_runthrough():
-    """Perform a live runthrough that copies the test app files and serves them."""
-    logger.info("Starting live runthrough of Goose App Maker")
-    
-    # Define the source directories
-    test_app_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources/kitchen-sink")
-    resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
-    
-    # Define the destination
-    app_name = "goose-demo-app"
-    dest_dir = os.path.join(APP_DIR, app_name)
-    
-    # Check if source directories exist
-    if not os.path.exists(test_app_dir):
-        logger.error(f"Test app directory '{test_app_dir}' does not exist")
-        return False
-    
-    if not os.path.exists(resources_dir):
-        logger.error(f"Resources directory '{resources_dir}' does not exist")
-        return False
-    
-    # Delete the destination directory if it exists
-    if os.path.exists(dest_dir):
-        logger.info(f"Removing existing app at '{dest_dir}'")
-        shutil.rmtree(dest_dir)
-    
-    # Create the destination directory
-    os.makedirs(dest_dir, exist_ok=True)
-    
-    # Create the manifest file
-    manifest = {
-        "name": "Goose Demo App",
-        "description": "A demo application with interactive features",
-        "created": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "files": ["index.html", "style.css", "script.js", "goose_api.js"]
-    }
-    
-    with open(os.path.join(dest_dir, "manifest.json"), 'w') as f:
-        json.dump(manifest, f, indent=2)
-    
-    # Copy the files
-    try:
-        # Copy test app files (except goose_api.js which will come from resources)
-        for file_name in ["index.html", "style.css", "script.js", "goose_api.js"]:
-            src_file = os.path.join(test_app_dir, file_name)
-            dest_file = os.path.join(dest_dir, file_name)
-            
-            if os.path.exists(src_file):
-                logger.info(f"Copying {file_name} from {src_file} to {dest_file}")
-                shutil.copy2(src_file, dest_file)
-            else:
-                logger.error(f"Source file '{src_file}' does not exist")
-                return False
-                
-        logger.info(f"Successfully copied all files to {dest_dir}")
-        
-        # Serve the app
-        logger.info("Serving the demo app")
-        serve_result = serve_app(app_name)
-        
-        if serve_result["success"]:
-            # Open the app in the browser
-            logger.info("Opening the demo app in browser")
-            open_result = open_app(app_name)
-            
-            if open_result["success"]:
-                logger.info(f"Demo app opened successfully at {serve_result['url']}")
-                logger.info("Press Ctrl+C to stop the server and exit")
-                
-                # Keep the server running until interrupted
-                try:
-                    while True:
-                        time.sleep(1)
-                except KeyboardInterrupt:
-                    logger.info("Stopping server due to keyboard interrupt")
-                    stop_server()
-            else:
-                logger.error(f"Failed to open app: {open_result.get('error', 'Unknown error')}")
-                return False
-        else:
-            logger.error(f"Failed to serve app: {serve_result.get('error', 'Unknown error')}")
-            return False
-        
-        return True
-    except Exception as e:
-        logger.error(f"Error during live runthrough: {e}")
-        return False
-
-
 def main():
     """Entry point for the package when installed via pip."""
     import sys
 
     # Check command line arguments
     if len(sys.argv) > 1:
-        if sys.argv[1] == "--demo" or sys.argv[1] == "--live":
-            live_runthrough()
-        else:
-            print(f"Unknown argument: {sys.argv[1]}")
-            print("Available options: --demo/--live")
+        print(f"Unknown argument: {sys.argv[1]}")
+        print("No command line arguments are supported")
     else:
         # Normal MCP server mode
         logger.info("Starting MCP server...")

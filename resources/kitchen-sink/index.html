@@ -16,25 +16,58 @@
         <main>
             <section class="demo-section goose-api-section">
                 <h2>Goose API Demo</h2>
-                <div class="goose-container">
-                    <div class="goose-input">
-                        <textarea id="goose-message" placeholder="Enter your message here...">list files in this dir</textarea>
-                        <div class="input-options">
-                            <label for="response-format">Response format:</label>
-                            <select id="response-format">
-                                <option value="list">List</option>
-                                <option value="text">Text</option>
-                                <option value="table">Table</option>
-                            </select>
+                
+                <!-- Text Response Section -->
+                <div class="api-demo-section">
+                    <h3>Text Response</h3>
+                    <div class="goose-container">
+                        <div class="goose-input">
+                            <textarea id="text-message" placeholder="Ask a question that requires a paragraph response...">Explain how HTTP works in a paragraph</textarea>
+                            <div class="button-row">
+                                <button id="text-send-btn" class="btn">Get Text Response</button>
+                                <button id="text-clear-btn" class="btn reset-btn">Clear</button>
+                            </div>
                         </div>
-                        <div class="button-row">
-                            <button id="goose-send-btn" class="btn">Send Message</button>
-                            <button id="goose-clear-btn" class="btn reset-btn">Clear Response</button>
+                        <div class="goose-response">
+                            <h4>Response:</h4>
+                            <div id="text-response" class="response-content"></div>
                         </div>
                     </div>
-                    <div class="goose-response">
-                        <h3>Response:</h3>
-                        <div id="goose-response" class="response-content"></div>
+                </div>
+                
+                <!-- List Response Section -->
+                <div class="api-demo-section">
+                    <h3>List Response</h3>
+                    <div class="goose-container">
+                        <div class="goose-input">
+                            <textarea id="list-message" placeholder="Ask for a list of items...">List 5 popular programming languages</textarea>
+                            <div class="button-row">
+                                <button id="list-send-btn" class="btn">Get List Response</button>
+                                <button id="list-clear-btn" class="btn reset-btn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="goose-response">
+                            <h4>Response:</h4>
+                            <div id="list-response" class="response-content"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Table Response Section -->
+                <div class="api-demo-section">
+                    <h3>Table Response</h3>
+                    <div class="goose-container">
+                        <div class="goose-input">
+                            <textarea id="table-message" placeholder="Ask for information that would be best presented in a table...">Compare the features of 3 popular cloud providers</textarea>
+                            <div class="button-row">
+                                <button id="table-send-btn" class="btn">Get Table Response</button>
+                                <button id="table-clear-btn" class="btn reset-btn">Clear</button>
+                            </div>
+                        </div>
+                        <div class="goose-response">
+                            <h4>Response:</h4>
+                            <div id="table-response" class="response-content"></div>
+                        </div>
                     </div>
                 </div>
             </section>

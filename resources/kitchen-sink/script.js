@@ -13,65 +13,109 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Goose API functionality
 function initGooseApi() {
-    const messageInput = document.getElementById('goose-message');
-    const sendButton = document.getElementById('goose-send-btn');
-    const clearButton = document.getElementById('goose-clear-btn');
-    const responseContainer = document.getElementById('goose-response');
-    const formatSelect = document.getElementById('response-format');
+    // Text response elements
+    const textMessageInput = document.getElementById('text-message');
+    const textSendButton = document.getElementById('text-send-btn');
+    const textClearButton = document.getElementById('text-clear-btn');
+    const textResponseContainer = document.getElementById('text-response');
     
-    // Add event listeners
-    sendButton.addEventListener('click', sendMessage);
-    clearButton.addEventListener('click', clearResponse);
+    // List response elements
+    const listMessageInput = document.getElementById('list-message');
+    const listSendButton = document.getElementById('list-send-btn');
+    const listClearButton = document.getElementById('list-clear-btn');
+    const listResponseContainer = document.getElementById('list-response');
     
-    async function sendMessage() {
-        const message = messageInput.value.trim();
-        const format = formatSelect ? formatSelect.value : 'list';
+    // Table response elements
+    const tableMessageInput = document.getElementById('table-message');
+    const tableSendButton = document.getElementById('table-send-btn');
+    const tableClearButton = document.getElementById('table-clear-btn');
+    const tableResponseContainer = document.getElementById('table-response');
+    
+    // Add event listeners for text response
+    textSendButton.addEventListener('click', () => sendTextMessage(textMessageInput, textResponseContainer));
+    textClearButton.addEventListener('click', () => clearResponse(textResponseContainer));
+    
+    // Add event listeners for list response
+    listSendButton.addEventListener('click', () => sendListMessage(listMessageInput, listResponseContainer));
+    listClearButton.addEventListener('click', () => clearResponse(listResponseContainer));
+    
+    // Add event listeners for table response
+    tableSendButton.addEventListener('click', () => sendTableMessage(tableMessageInput, tableResponseContainer));
+    tableClearButton.addEventListener('click', () => clearResponse(tableResponseContainer));
+    
+    // Text response handler
+    async function sendTextMessage(input, container) {
+        const message = input.value.trim();
         
         if (!message) {
-            showError('Please enter a message');
+            showError(container, 'Please enter a message');
             return;
         }
         
-        // Clear previous response and show loading
-        responseContainer.innerHTML = '<div class="loading-message">Sending request...</div>';
+        // Show loading
+        container.innerHTML = '<div class="loading-message">Sending request...</div>';
         
         try {
-            let response;
-            
-            // Use the appropriate request function based on the selected format
-            switch (format) {
-                case 'text':
-                    response = await gooseRequestText(message);
-                    displayTextResponse(response);
-                    break;
-                    
-                case 'table':
-                    // Define columns for the table based on the query
-                    const tableColumns = determineTableColumns(message);
-                    response = await gooseRequestTable(message, tableColumns);
-                    displayTableResponse(response);
-                    break;
-                    
-                case 'list':
-                default:
-                    response = await gooseRequestList(message);
-                    displayListResponse(response);
-                    break;
-            }
-            
+            const response = await gooseRequestText(message);
+            displayTextResponse(container, response);
         } catch (error) {
             console.error('Error:', error);
-            showError(`Error: ${error.message}`);
+            showError(container, `Error: ${error.message}`);
         }
     }
     
-    function displayTextResponse(text) {
-        responseContainer.innerHTML = `<div class="text-response">${text}</div>`;
+    // List response handler
+    async function sendListMessage(input, container) {
+        const message = input.value.trim();
+        
+        if (!message) {
+            showError(container, 'Please enter a message');
+            return;
+        }
+        
+        // Show loading
+        container.innerHTML = '<div class="loading-message">Sending request...</div>';
+        
+        try {
+            const response = await gooseRequestList(message);
+            displayListResponse(container, response);
+        } catch (error) {
+            console.error('Error:', error);
+            showError(container, `Error: ${error.message}`);
+        }
     }
     
-    function displayListResponse(items) {
+    // Table response handler
+    async function sendTableMessage(input, container) {
+        const message = input.value.trim();
+        
+        if (!message) {
+            showError(container, 'Please enter a message');
+            return;
+        }
+        
+        // Show loading
+        container.innerHTML = '<div class="loading-message">Sending request...</div>';
+        
+        try {
+            // Define columns based on the type of query
+            const columns = ["Feature", "Description", "Notes"];
+            const response = await gooseRequestTable(message, columns);
+            displayTableResponse(container, response);
+        } catch (error) {
+            console.error('Error:', error);
+            showError(container, `Error: ${error.message}`);
+        }
+    }
+    
+    // Display functions
+    function displayTextResponse(container, text) {
+        container.innerHTML = `<div class="text-response">${text}</div>`;
+    }
+    
+    function displayListResponse(container, items) {
         if (!Array.isArray(items) || items.length === 0) {
-            responseContainer.innerHTML = '<div class="empty-response">No items returned</div>';
+            container.innerHTML = '<div class="empty-response">No items returned</div>';
             return;
         }
         
@@ -84,13 +128,13 @@ function initGooseApi() {
             list.appendChild(li);
         });
         
-        responseContainer.innerHTML = '';
-        responseContainer.appendChild(list);
+        container.innerHTML = '';
+        container.appendChild(list);
     }
     
-    function displayTableResponse(tableData) {
+    function displayTableResponse(container, tableData) {
         if (!tableData || !tableData.columns || !tableData.rows || tableData.rows.length === 0) {
-            responseContainer.innerHTML = '<div class="empty-response">No table data returned</div>';
+            container.innerHTML = '<div class="empty-response">No table data returned</div>';
             return;
         }
         
@@ -127,43 +171,16 @@ function initGooseApi() {
         
         table.appendChild(tbody);
         
-        responseContainer.innerHTML = '';
-        responseContainer.appendChild(table);
+        container.innerHTML = '';
+        container.appendChild(table);
     }
     
-    function showError(message) {
-        responseContainer.innerHTML = `<div class="error-message">${message}</div>`;
+    function showError(container, message) {
+        container.innerHTML = `<div class="error-message">${message}</div>`;
     }
     
-    function clearResponse() {
-        responseContainer.innerHTML = '';
-    }
-    
-    // Helper function to determine appropriate table columns based on the query
-    function determineTableColumns(query) {
-        // Default columns if we can't determine better ones
-        const defaultColumns = ["Item", "Description"];
-        
-        // Common column patterns based on query keywords
-        if (/compar(e|ison)|vs\.?|versus/i.test(query)) {
-            return ["Feature", "Option 1", "Option 2"];
-        } else if (/pros?\s+and\s+cons/i.test(query)) {
-            return ["Item", "Pros", "Cons"];
-        } else if (/advantages|benefits/i.test(query)) {
-            return ["Item", "Advantages", "Disadvantages"];
-        } else if (/price|cost|budget/i.test(query)) {
-            return ["Item", "Price", "Description"];
-        } else if (/stat(s|istics)|data|numbers/i.test(query)) {
-            return ["Metric", "Value", "Notes"];
-        } else if (/schedule|time|agenda/i.test(query)) {
-            return ["Time", "Activity", "Details"];
-        } else if (/recipe|ingredient/i.test(query)) {
-            return ["Ingredient", "Amount", "Notes"];
-        } else if (/rank|rating|score/i.test(query)) {
-            return ["Rank", "Item", "Score"];
-        }
-        
-        return defaultColumns;
+    function clearResponse(container) {
+        container.innerHTML = '';
     }
 }
 

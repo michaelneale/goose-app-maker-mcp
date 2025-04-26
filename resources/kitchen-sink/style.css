@@ -299,19 +299,41 @@ footer {
     margin-bottom: 40px;
 }
 
+.api-demo-section {
+    margin-bottom: 30px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: rgba(33, 38, 45, 0.5);
+}
+
+.api-demo-section h3 {
+    color: var(--accent-blue);
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.api-demo-section h4 {
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
 .goose-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
 }
 
 .goose-input {
     width: 100%;
 }
 
-#goose-message {
+#text-message,
+#list-message,
+#table-message {
     width: 100%;
-    min-height: 100px;
+    min-height: 80px;
     padding: 12px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -320,26 +342,6 @@ footer {
     color: var(--text-primary);
     margin-bottom: 10px;
     resize: vertical;
-}
-
-.input-options {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.input-options label {
-    margin-right: 10px;
-    color: var(--text-secondary);
-}
-
-#response-format {
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
-    cursor: pointer;
 }
 
 .button-row {
@@ -354,14 +356,9 @@ footer {
     border: 1px solid var(--border-color);
 }
 
-.goose-response h3 {
-    margin-bottom: 10px;
-    color: var(--accent-blue);
-}
-
 .response-content {
     min-height: 50px;
-    max-height: 300px;
+    max-height: 200px;
     overflow-y: auto;
     padding: 10px;
     border-radius: 4px;

@@ -56,11 +56,9 @@ When generating web apps:
 - They should be beautiful and user-friendly
 - Ensure proper HTML5, CSS, and JavaScript structure
 - You can embed data in the app if it is static and non PII, and safe to do so
-- You can use the goose_api.js when data needs to be dynamic
-- Care is needed when using other apis as they may not always be available, and credentials may be required (so consider using goose_api.js)
+- Use the goose_api.js when data needs to be dynamic (see below)
 - Open the app as it is built with the default browser to show the user, and invite feedback
 - Use other tools as available to assist in building the app (such as screenshot for visual review)
-- Other tools can be used via the goose_api.js library in the app as needed (it will return textual data so can be prompted to format it appropriately, markdown works well, simple lists etc)
 
 Each app is stored in its own directory within ~/.config/goose/app-maker-apps.
 
@@ -72,21 +70,23 @@ Resources:
 - The resources directory is located at: {resources_dir} which has utilities and examples you can refer to.
 - For example apps and templates, refer to the examples in the [README.md]({readme_path})
 - For apps requiring dynamic functionality or access to data sources/services, include [goose_api.js]({goose_api_path}) in your app
-  - This script provides methods to communicate with the Goose API
-  - When served, environment variables like $GOOSE_PORT and $GOOSE_SERVER__SECRET_KEY are automatically replaced with actual values
-  - include that with app files, placed next to them
-  - When using sendGooseRequest(message) - the message should clearly specify the desired format (list, markdown, json - default will return just a text value which is also useful)
 
-  Some of the tools available:
+Using goose_api.js for dynamic content:
+- Include it in your HTML: <script src="goose_api.js"></script>
+- Use these functions to get responses from Goose:
+  - gooseRequestText(query) - Returns a text/paragraph response
+  - gooseRequestList(query) - Returns a list of items
+  - gooseRequestTable(query, columns) - Returns tabular data (columns required)
+- Example: const response = await gooseRequestList("List 5 best movies");
+- See resources/README.md for more detailed examples
 
-    create_app - use this when starting new
-    list_apps - find existing apps 
-    serve_app - serve an app locally
-    open_app - open an app in a browser (macos)
-    update_app_file - update a file in an app
-    view_app_file - view a file in an app
-
-
+Some of the tools available:
+  create_app - use this when starting new
+  list_apps - find existing apps 
+  serve_app - serve an app locally
+  open_app - open an app in a browser (macos)
+  update_app_file - update a file in an app
+  view_app_file - view a file in an app
 """
 
 # Format the instructions with dynamic paths

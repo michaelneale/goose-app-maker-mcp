@@ -18,7 +18,7 @@ A basic but more complete example including how to dynamically fetch data from g
 
 ### kitchen-sink/goose_api.js
 
-A JavaScript client for interacting with the Goose API. This client handles sending requests and processing streaming responses, use this for web apps that need dynamic data by copying it next to other files as needed. This would usually be copied in to the root of each app dir for usage by the web apps
+A JavaScript client for interacting with the Goose API. This client handles sending requests and receiving responses asynchronously. Copy this file to your app directory to enable communication with Goose.
 
 #### Usage
 
@@ -27,7 +27,43 @@ A JavaScript client for interacting with the Goose API. This client handles send
    <script src="goose_api.js"></script>
    ```
 
-2. Send a request to the Goose API:
+2. Request different types of responses from Goose:
+
+   **Text Response**
    ```javascript
-     await getCompleteResponse("your message here");
+   // For paragraph or free text responses
+   try {
+     const textResponse = await gooseRequestText("Explain how HTTP works in a paragraph");
+     console.log(textResponse); // Returns a string
+   } catch (error) {
+     console.error("Error:", error);
+   }
    ```
+
+   **List Response**
+   ```javascript
+   // For lists of items
+   try {
+     const listResponse = await gooseRequestList("List 5 popular programming languages");
+     console.log(listResponse); // Returns an array of strings
+   } catch (error) {
+     console.error("Error:", error);
+   }
+   ```
+
+   **Table Response**
+   ```javascript
+   // For tabular data (requires column names)
+   try {
+     const columns = ["Feature", "Description", "Notes"];
+     const tableResponse = await gooseRequestTable("Compare the features of 3 popular cloud providers", columns);
+     console.log(tableResponse); // Returns an object with columns and rows
+     // Format: { columns: ["Feature", "Description", "Notes"], rows: [["Row1Col1", "Row1Col2", "Row1Col3"], ...] }
+   } catch (error) {
+     console.error("Error:", error);
+   }
+   ```
+
+3. The API functions return promises that resolve when the response is available, allowing for asynchronous operation.
+
+4. See the kitchen-sink example for a complete implementation of all three response types.

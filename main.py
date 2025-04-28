@@ -171,7 +171,7 @@ def apps_list() -> Dict[str, Any]:
         logger.error(f"Error listing apps: {e}")
         return {"success": False, "error": f"Failed to list apps: {str(e)}"}
     
-@mcp.tool()
+#@mcp.tool()
 def app_update_file(app_name: str, file_path: str, content: str) -> Dict[str, Any]:
     """
     Update or create a file in an existing web application.
@@ -233,7 +233,7 @@ def app_update_file(app_name: str, file_path: str, content: str) -> Dict[str, An
         logger.error(f"Error updating app file: {e}")
         return {"success": False, "error": f"Failed to update file: {str(e)}"}
 
-@mcp.tool()
+#@mcp.tool()
 def app_view_file(app_name: str, file_path: str) -> Dict[str, Any]:
     """
     View the content of a file in an existing web application.
@@ -367,6 +367,7 @@ def app_create(app_name: str, description: str = "") -> Dict[str, Any]:
             "success": True,
             "app_name": safe_app_name,
             "app_path": app_path,
+            "files": copied_files,
             "message": f"App '{app_name}' created successfully at {app_path}"
         }
     except Exception as e:

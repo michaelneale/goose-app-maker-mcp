@@ -7,7 +7,7 @@ import json
 import shutil
 import http.server
 import socketserver
-from typing import Dict, Any, Optional, Union, List
+from typing import Dict, Any, List
 from pathlib import Path
 
 # Configure logging
@@ -108,23 +108,6 @@ instructions = instructions.format(
 )
 
 mcp = FastMCP("Goose App Maker", instructions=instructions)
-
-
-@mcp.tool()
-def app_publish(app_name: str) -> Dict[str, Any]:
-    """
-    Publish an app to the web. This is a placeholder function.
-    
-    Args:
-        app_name: Name of the application to publish
-    """
-
-    # TODO: this could zip up the app dir
-    # still working on how to share this
-
-    return
-            
-
 
 
 @mcp.tool()

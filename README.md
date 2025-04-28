@@ -19,12 +19,6 @@ This MCP (Model Context Protocol) servcer allows users to create, manage, and se
 ```sh
 # Run directly from source
 uv --directory $PWD run python main.py
-
-# Run in test mode (quick test of functionality)
-uv --directory $PWD run python main.py --test
-
-# Run in demo mode (copies test app files and serves them)
-uv --directory $PWD run python main.py --demo
 ```
 
 ## Building and Installing
@@ -71,14 +65,14 @@ Each web app is stored in its own directory under `~/.config/goose/app-maker-app
 
 ```
 app-name/
-├── manifest.json     # App metadata
+├── goose-app-manifest.json     # App metadata
 ├── index.html        # Main HTML file
 ├── style.css         # CSS styles
 ├── script.js         # JavaScript code
 └── ...               # Other app files
 ```
 
-The `manifest.json` file contains metadata about the app, including:
+The `goose-app-manifest.json` file contains metadata about the app, including:
 - name: Display name of the app
 - type: Type of app (e.g., "static", "react", etc.)
 - description: Brief description of the app

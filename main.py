@@ -100,7 +100,7 @@ Sharing or downloading apps:
     * with google_drive extension you can also download the app from a folder in google drive
     * if you are using the developer extension, you can use the developer tools to download the app as a zip file
        - find the app directory and download each of the files as needed into the app-maker-apps directory    
-    * you can also search for existing apps in google drive
+    * you can also search for existing apps in google drive (look for goose-app-manifest.json files which will be alongside the apps)    
 
     
 
@@ -149,15 +149,15 @@ def apps_list() -> Dict[str, Any]:
                         rel_path = str(file_path.relative_to(app_dir))
                         app_info["files"].append(rel_path)
                 
-                # Check if there's a manifest.json file
-                manifest_path = app_dir / "manifest.json"
+                # Check if there's a goose-app-manifest.json file
+                manifest_path = app_dir / "goose-app-manifest.json"
                 if manifest_path.exists():
                     try:
                         with open(manifest_path, 'r') as f:
                             manifest = json.load(f)
                             app_info["manifest"] = manifest
                     except json.JSONDecodeError:
-                        app_info["manifest_error"] = "Invalid manifest.json file"
+                        app_info["manifest_error"] = "Invalid goose-app-manifest.json file"
                 
                 apps.append(app_info)
         
@@ -204,7 +204,7 @@ def app_update_file(app_name: str, file_path: str, content: str) -> Dict[str, An
             f.write(content)
         
         # Update manifest if it exists
-        manifest_path = os.path.join(app_path, "manifest.json")
+        manifest_path = os.path.join(app_path, "goose-app-manifest.json")
         if os.path.exists(manifest_path):
             try:
                 with open(manifest_path, 'r') as f:
@@ -360,7 +360,7 @@ def app_create(app_name: str, description: str = "") -> Dict[str, Any]:
             "files": copied_files
         }
         
-        with open(os.path.join(app_path, "manifest.json"), 'w') as f:
+        with open(os.path.join(app_path, "goose-app-manifest.json"), 'w') as f:
             json.dump(manifest, f, indent=2)
         
         return {

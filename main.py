@@ -457,10 +457,10 @@ def app_serve(app_name: str) -> Dict[str, Any]:
                     # Wait for the response with timeout
                     lock, response_ready = response_locks[response_id]
                     with lock:
-                        # Wait for up to 30 seconds for the response to be ready
+                        # Wait for up to 180 seconds for the response to be ready
                         start_time = time.time()
-                        while not response_ready and time.time() - start_time < 30:
-                            lock.wait(30 - (time.time() - start_time))
+                        while not response_ready and time.time() - start_time < 180:
+                            lock.wait(180 - (time.time() - start_time))
                             
                             # Check if the response is now available
                             if response_id in app_responses:

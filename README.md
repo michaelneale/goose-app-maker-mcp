@@ -7,23 +7,45 @@ This MCP (Model Context Protocol) servcer allows users to create, manage, and se
 - Create new web applications with custom HTML, CSS, and JavaScript
 - Store apps in `~/.config/goose/app-maker-apps` directory (each app in its own subdirectory)
 - Serve web applications locally on demand
-- Open web applications in the default browser
-- Update existing web application files
-- List all available web applications
-- Delete web applications
-- resources dir for helper scripts and examples
-- make apps that can themselves use goose
-- share apps via things like google drive for you
-- resources/goose_api.js which can be used in web apps that need to talk to goose api (web serve will provide creds just in time)
+- Open web applications in the default browser (and chromeless if possible)
+- Lists all available web applications
+- make apps that can themselves use goose as a generic backend
+
+### Run productivity apps and dynamic dashboards
+
+goose keeps track of your apps: 
+
+<img width="682" alt="Screenshot 2025-04-28 at 7 35 46 pm" src="https://github.com/user-attachments/assets/6799833d-1edb-48f3-9061-656383f646fd" />
+
+### Load data via goose (re-using its extensions)
+
+![Screenshot 2025-04-28 at 7 38 24 pm](https://github.com/user-attachments/assets/260e3c29-8aee-4492-87e5-7f20fe8a8e41)
+
+![Screenshot 2025-04-28 at 7 38 53 pm](https://github.com/user-attachments/assets/473730e6-350c-4af2-8797-39b505b6748b)
+
+
+### Make apps on demand
+
+<img width="400" alt="Screenshot 2025-04-28 at 6 24 09 pm" src="https://github.com/user-attachments/assets/5b2d0a5b-9012-4f67-80e1-e61641bdb45a" />
+
+<img width="300" alt="Screenshot 2025-04-28 at 6 31 06 pm" src="https://github.com/user-attachments/assets/a856fc51-8476-4e39-afbb-99302f7e43c7" />
+
+### Show rich tabular or list data as well
+
+<img width="722" alt="Screenshot 2025-04-28 at 6 32 22 pm" src="https://github.com/user-attachments/assets/068e6dce-48b1-4fc0-b769-114961302d69" />
+
 
 ## Usage from source
 
+eg in goose: 
 ```sh
 # Run directly from source
 uv --directory $PWD run python main.py
 ```
 
-## Building and Installing
+IMPORTANT: this MCP is required to be run in the goose desktop app at the moment (as it accesses goose-server/goosed)
+
+## Building and publishing
 
 ### Optional: Build in a clean environment using uv
 
@@ -61,27 +83,6 @@ uv pip install twine
 python -m twine upload dist/*
 ```
 
-## Web App Structure
-
-Each web app is stored in its own directory under `~/.config/goose/app-maker-apps` with the following structure:
-
-```
-app-name/
-├── goose-app-manifest.json     # App metadata
-├── index.html        # Main HTML file
-├── style.css         # CSS styles
-├── script.js         # JavaScript code
-└── ...               # Other app files
-```
-
-The `goose-app-manifest.json` file contains metadata about the app, including:
-- name: Display name of the app
-- type: Type of app (e.g., "static", "react", etc.)
-- description: Brief description of the app
-- created: Timestamp when the app was created
-- files: List of files in the app
-
-
 # Apps that use goose as an api
 
 This MCP serves up apps, but also allows them to talk to goose via goosed and their own session: 
@@ -95,6 +96,30 @@ The system implements a non-blocking, asynchronous request-response pattern that
 3. A response storage mechanism with thread synchronization
 
 ## How It Works
+
+### Web App Structure
+
+Web apps are made (or downloaded) on request, based on resources/templates. 
+Each web app is stored in its own directory under `~/.config/goose/app-maker-apps` with the following structure:
+
+```
+app-name/
+├── goose-app-manifest.json     # App metadata
+├── index.html        # Main HTML file
+├── style.css         # CSS styles
+├── script.js         # JavaScript code
+└── goose_api.js      # allows the apps to access goose(d) for deeper backend functionality
+└── ...               # Other app files
+
+```
+
+The `goose-app-manifest.json` file contains metadata about the app, including:
+- name: Display name of the app
+- type: Type of app (e.g., "static", "react", etc.)
+- description: Brief description of the app
+- created: Timestamp when the app was created
+- files: List of files in the app
+
 
 ### 1. Client-Side Request Flow
 

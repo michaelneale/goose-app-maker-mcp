@@ -92,14 +92,13 @@ Using goose_api.js for dynamic content:
 - Example: const response = await gooseRequestList("List 5 best movies");
 - See resources/README.md for more detailed examples
 
-Sharing or downloading apps: 
-    * if google_drive extension (or similar) is installed and you need to publish the app:
-        - create a folder for the app to share with the apps name (this may be under another folder if requested)
-        - upload the app contents (html, css, js, json etc) as files to the folder you created
-        - you can update app contents but check with the user first, and be sure not to over write new files
-    * with google_drive extension you can also download the app from a folder in google drive
-    * if you are using the developer extension, you can use the developer tools to download the app as a zip file
-       - find the app directory and download each of the files as needed into the app-maker-apps directory    
+Sharing or downloading apps, if google_drive extension (or similar) is installed: 
+    * publishing the app:
+        - create a folder for the app to share with the apps name as a subfolder in a location suggested by the user (or default location)
+        - if there is already an app in that location (look for goose-app-manifest.json) - ask if they want to overwrite it and check the timestamps to make sure not accidentally over writing.
+        - upload the app contents (html, css, js, json etc) as files to the folder you created        
+    * downloading and running an app:
+       - find the app directory and download each of the files as needed into the app-maker-apps directory using the google drive extension    
     * you can also search for existing apps in google drive (look for goose-app-manifest.json files which will be alongside the apps)    
 
     

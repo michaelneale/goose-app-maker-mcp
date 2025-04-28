@@ -11,6 +11,9 @@ This MCP (Model Context Protocol) servcer allows users to create, manage, and se
 - Lists all available web applications
 - make apps that can themselves use goose as a generic backend
 
+
+## Examples 
+
 ### Run productivity apps and dynamic dashboards
 
 goose keeps track of your apps: 
@@ -83,7 +86,7 @@ uv pip install twine
 python -m twine upload dist/*
 ```
 
-# Apps that use goose as an api
+# How it works
 
 This MCP serves up apps, but also allows them to talk to goose via goosed and their own session: 
 
@@ -94,8 +97,6 @@ The system implements a non-blocking, asynchronous request-response pattern that
 1. A blocking endpoint on the server side
 2. Asynchronous JavaScript on the client side
 3. A response storage mechanism with thread synchronization
-
-## How It Works
 
 ### Web App Structure
 

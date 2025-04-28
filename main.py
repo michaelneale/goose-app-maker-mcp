@@ -41,11 +41,12 @@ response_locks = {}
 app_errors = []
 
 instructions = """
-You are an expert html5/CSS/js web app author for casual "apps" for goose.
+You are an expert html5/CSS/js web app author for casual "apps" for goose. Use this toolkit when running/making apps for goose.
 
 Your job is to help users create and manage web applications that are stored in the ~/.config/goose/app-maker-apps directory.
 In some cases you will be creating from scratch (or building from other example app), or modifying an existing app
 In other cases you will just be serving up an existing app that has been downloaded and is available (will not be need to be modified unless the user explicitaly asks to)
+In some other cases you may just be answering a query/taking an action that an app requires and you may not need to edit the app.
 
 You can also serve up apps via a built in server. 
 
@@ -89,12 +90,12 @@ Using goose_api.js for dynamic content:
 - See resources/README.md for more detailed examples
 
 Some of the tools available:
-  create_app - use this when starting new
-  list_apps - find existing apps 
-  serve_app - serve an app locally
-  open_app - open an app in a browser (macos)
-  update_app_file - update a file in an app
-  view_app_file - view a file in an app
+  app_create - use this when starting new
+  apps_list - find existing apps 
+  app_serve - serve an app locally
+  app_open - open an app in a browser (macos)
+  app_update_file - update a file in an app
+  app_view_file - view a file in an app
   app_response - for sending data back to the app front end
   app_error - use this to see if there are error from the app
 """
@@ -110,7 +111,7 @@ mcp = FastMCP("Goose App Maker", instructions=instructions)
 
 
 @mcp.tool()
-def publish_app(app_name: str) -> Dict[str, Any]:
+def app_publish(app_name: str) -> Dict[str, Any]:
     """
     Publish an app to the web. This is a placeholder function.
     
@@ -127,7 +128,7 @@ def publish_app(app_name: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-def list_apps() -> Dict[str, Any]:
+def apps_list() -> Dict[str, Any]:
     """
     List all available web applications.
     
@@ -173,7 +174,7 @@ def list_apps() -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to list apps: {str(e)}"}
     
 @mcp.tool()
-def update_app_file(app_name: str, file_path: str, content: str) -> Dict[str, Any]:
+def app_update_file(app_name: str, file_path: str, content: str) -> Dict[str, Any]:
     """
     Update or create a file in an existing web application.
     
@@ -235,7 +236,7 @@ def update_app_file(app_name: str, file_path: str, content: str) -> Dict[str, An
         return {"success": False, "error": f"Failed to update file: {str(e)}"}
 
 @mcp.tool()
-def view_app_file(app_name: str, file_path: str) -> Dict[str, Any]:
+def app_view_file(app_name: str, file_path: str) -> Dict[str, Any]:
     """
     View the content of a file in an existing web application.
     
@@ -279,7 +280,7 @@ def view_app_file(app_name: str, file_path: str) -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to view file: {str(e)}"}
 
 @mcp.tool()
-def delete_app(app_name: str) -> Dict[str, Any]:
+def app_delete(app_name: str) -> Dict[str, Any]:
     """
     Delete an existing web application.
     
@@ -312,7 +313,7 @@ def delete_app(app_name: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-def create_app(app_name: str, description: str = "") -> Dict[str, Any]:
+def app_create(app_name: str, description: str = "") -> Dict[str, Any]:
     """
     Create a new web application directory and copy starter files.
     The starter files are for you to replace with actual content, you don't have to use them as is.
@@ -375,7 +376,7 @@ def create_app(app_name: str, description: str = "") -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to create app: {str(e)}"}
 
 @mcp.tool()
-def serve_app(app_name: str) -> Dict[str, Any]:
+def app_serve(app_name: str) -> Dict[str, Any]:
     """
     Serve an existing web application on a local HTTP server.
     The server will automatically find an available port.
@@ -570,7 +571,7 @@ def serve_app(app_name: str) -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to serve app: {str(e)}"}
 
 @mcp.tool()
-def stop_server() -> Dict[str, Any]:
+def app_stop_server() -> Dict[str, Any]:
     """
     Stop the currently running HTTP server.
     
@@ -599,7 +600,7 @@ def stop_server() -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to stop server: {str(e)}"}
 
 @mcp.tool()
-def open_app(app_name: str) -> Dict[str, Any]:
+def app_open(app_name: str) -> Dict[str, Any]:
     """
     Open an app in the default web browser. If the app is not currently being served,
     it will be served first.
@@ -623,7 +624,7 @@ def open_app(app_name: str) -> Dict[str, Any]:
         
         # If the server is not running, start it
         if not http_server:
-            serve_result = serve_app(app_name)
+            serve_result = app_serve(app_name)
             if not serve_result["success"]:
                 return serve_result
             # Get the URL from the serve result
@@ -667,7 +668,7 @@ def open_app(app_name: str) -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to open app: {str(e)}"}
 
 @mcp.tool()
-def refresh_app() -> Dict[str, Any]:
+def app_refresh() -> Dict[str, Any]:
     """
     Refresh the currently open app in Chrome.
     Only works on macOS with Google Chrome.
@@ -708,7 +709,7 @@ def app_response(response_id: str,
     Provide only one of string_data, list_data, or table_data.
     
     Args:
-        response_id: Unique identifier for the response
+        response_id: Unique identifier for the response which will be accessed via another API.
         string_data: Optional string response
         list_data: Optional list of strings response
         table_data: Optional table response with columns and rows

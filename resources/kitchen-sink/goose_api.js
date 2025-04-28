@@ -37,21 +37,23 @@ function generateResponseId() {
 }
 
 /**
+ * Generate a random session ID for interaction with Goose
+ */
+function generateSessionId() {
+  return Math.random().toString(36).substring(2, 15);
+}
+
+
+/**
  * Send a request to Goose and wait for the response
  * @param {string} message - The message to send to Goose
  * @param {string} responseId - The ID to use for the response
- * @param {object} options - Additional options for the request
  * @returns {Promise} A promise that resolves when the response is received
  */
-async function sendGooseRequestAndWait(message, responseId, options = {}) {
-  // Default options
-  const defaults = {
-    sessionId: 'web-client-session',
-    sessionWorkingDir: '/tmp'
-  };
+async function sendGooseRequestAndWait(message, responseId) {
   
-  // Merge defaults with provided options
-  const config = { ...defaults, ...options };
+  message = "In responding to following IMPORTANT to note: return results with app_response and app_error, try to avoid other app_ named tools (but other tools to provide data or actions are ok as needed). \n" 
+            + message;
     
   // Create the request body
   const requestBody = {
@@ -67,7 +69,8 @@ async function sendGooseRequestAndWait(message, responseId, options = {}) {
         ]
       }
     ],
-    session_working_dir: config.sessionWorkingDir
+    session_working_dir: '/tmp', 
+    session_id: generateSessionId(),
   };
   
   console.log('Sending request to goose-server on port', GOOSE_PORT);
@@ -134,37 +137,34 @@ async function waitForResponse(responseId) {
 /**
  * Request a text response from Goose
  * @param {string} query - The query to send to Goose
- * @param {object} options - Additional options for the request
  * @returns {Promise<string>} A promise that resolves with the text response
  */
-async function gooseRequestText(query, options = {}) {
+async function gooseRequestText(query) {
   const responseId = generateResponseId();
-  const message = `After doing the following, call the app_response tool with response_id="${responseId}", string_data=your response to the following query. Query: ${query}`;
+  const message = `After doing the following, call the app_response tool with response_id="${responseId}", string_data=your response to the following query.\n Query:\n ${query}`;
   
-  return sendGooseRequestAndWait(message, responseId, options);
+  return sendGooseRequestAndWait(message, responseId);
 }
 
 /**
  * Request a list response from Goose
  * @param {string} query - The query to send to Goose
- * @param {object} options - Additional options for the request
  * @returns {Promise<Array<string>>} A promise that resolves with the list response
  */
-async function gooseRequestList(query, options = {}) {
+async function gooseRequestList(query) {
   const responseId = generateResponseId();
   const message = `After doing the following, call the app_response tool with response_id="${responseId}", list_data=your response to the following query as a list of strings. Query: ${query}`;
   
-  return sendGooseRequestAndWait(message, responseId, options);
+  return sendGooseRequestAndWait(message, responseId);
 }
 
 /**
  * Request a table response from Goose
  * @param {string} query - The query to send to Goose
  * @param {Array<string>} columns - The column names for the table (required)
- * @param {object} options - Additional options for the request
  * @returns {Promise<Object>} A promise that resolves with the table response
  */
-async function gooseRequestTable(query, columns, options = {}) {
+async function gooseRequestTable(query, columns) {
   if (!columns || !Array.isArray(columns) || columns.length === 0) {
     throw new Error("Column names are required for table requests");
   }
@@ -176,28 +176,19 @@ async function gooseRequestTable(query, columns, options = {}) {
   message += ` The table_data should be in this format: {"columns": ${JSON.stringify(columns)}, "rows": [["row1col1", "row1col2", ...], ...]}`;
   message += ` Query: ${query}`;
   
-  return sendGooseRequestAndWait(message, responseId, options);
+  return sendGooseRequestAndWait(message, responseId);
 }
 
 /**
  * Report an error to Goose
  * @param {string} errorMessage - The error message to report
- * @param {object} options - Additional options for the request
  * @returns {Promise<string>} A promise that resolves with a confirmation message
  */
-async function reportError(errorMessage, options = {}) {
+async function reportError(errorMessage) {
   if (!errorMessage) {
     throw new Error("Error message is required");
   }
   
-  // Default options
-  const defaults = {
-    sessionId: 'web-client-session',
-    sessionWorkingDir: '/tmp'
-  };
-  
-  // Merge defaults with provided options
-  const config = { ...defaults, ...options };
   
   // Create the message instructing Goose to call app_error
   const message = `Call the app_error tool with this error message: ${errorMessage}`;
@@ -216,7 +207,7 @@ async function reportError(errorMessage, options = {}) {
         ]
       }
     ],
-    session_working_dir: config.sessionWorkingDir
+    session_working_dir: '/tmp'
   };
   
   try {

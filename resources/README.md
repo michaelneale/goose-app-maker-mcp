@@ -79,6 +79,8 @@ A JavaScript client for interacting with the Goose API. This client handles send
    }
    ```
 
+   Note: error reporting is as you develop the app, you can look at app_error tool to fetch recent errors to help debug things for the user on their behalf if things aren't working.
+
 3. The API functions return promises that resolve when the response is available, allowing for asynchronous operation.
 
 4. See the kitchen-sink example for a complete implementation of all three response types.

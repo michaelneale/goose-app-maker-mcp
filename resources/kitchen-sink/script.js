@@ -61,6 +61,12 @@ function initGooseApi() {
         } catch (error) {
             console.error('Error:', error);
             showError(container, `Error: ${error.message}`);
+            // Report the error to Goose
+            try {
+                await reportError(`Error in text request: ${error.message} (Query: "${message.substring(0, 50)}...")`);
+            } catch (reportError) {
+                console.error('Failed to report error:', reportError);
+            }
         }
     }
     
@@ -82,6 +88,12 @@ function initGooseApi() {
         } catch (error) {
             console.error('Error:', error);
             showError(container, `Error: ${error.message}`);
+            // Report the error to Goose
+            try {
+                await reportError(`Error in list request: ${error.message} (Query: "${message.substring(0, 50)}...")`);
+            } catch (reportError) {
+                console.error('Failed to report error:', reportError);
+            }
         }
     }
     
@@ -105,6 +117,12 @@ function initGooseApi() {
         } catch (error) {
             console.error('Error:', error);
             showError(container, `Error: ${error.message}`);
+            // Report the error to Goose
+            try {
+                await reportError(`Error in table request: ${error.message} (Query: "${message.substring(0, 50)}...")`);
+            } catch (reportError) {
+                console.error('Failed to report error:', reportError);
+            }
         }
     }
     

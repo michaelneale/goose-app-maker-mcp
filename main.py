@@ -37,6 +37,9 @@ server_port = 8000  # Default port
 app_responses = {}
 response_locks = {}
 
+# Global variable to store app errors
+app_errors = []
+
 instructions = """
 You are an expert html5/CSS/js web app author for casual "apps" for goose.
 
@@ -77,6 +80,8 @@ Using goose_api.js for dynamic content:
   - gooseRequestText(query) - Returns a text/paragraph response
   - gooseRequestList(query) - Returns a list of items
   - gooseRequestTable(query, columns) - Returns tabular data (columns required)
+- For error reporting:
+  - reportError(errorMessage) - Reports errors back to Goose
 - Example: const response = await gooseRequestList("List 5 best movies");
 - See resources/README.md for more detailed examples
 
@@ -87,6 +92,8 @@ Some of the tools available:
   open_app - open an app in a browser (macos)
   update_app_file - update a file in an app
   view_app_file - view a file in an app
+  app_response - for sending data back to the app front end
+  app_error - use this to see if there are error from the app
 """
 
 # Format the instructions with dynamic paths
@@ -738,6 +745,45 @@ def app_response(response_id: str,
     except Exception as e:
         logger.error(f"Error storing response: {e}")
         return False
+
+@mcp.tool()
+def app_error(error_message: str = None) -> str:
+    """
+    Report an error from the app or retrieve the list of errors.
+    
+    Args:
+        error_message: Optional error message to report. If None, returns the list of errors.
+    
+    Returns:
+        A string containing the list of errors if error_message is None,
+        otherwise a confirmation message.
+    """
+    global app_errors
+    
+    try:
+        # If no error message is provided, return the list of errors
+        if error_message is None:
+            if not app_errors:
+                return "No errors reported."
+            
+            # Format the errors as a numbered list
+            error_list = "\n".join([f"{i+1}. {err}" for i, err in enumerate(app_errors)])
+            return f"Reported errors:\n{error_list}"
+        
+        # Add the error to the list with a timestamp
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        app_errors.append(f"[{timestamp}] {error_message}")
+        
+        # Keep only the last 100 errors to prevent unbounded growth
+        if len(app_errors) > 100:
+            app_errors = app_errors[-100:]
+        
+        logger.warning(f"App error reported: {error_message}")
+        return f"Error reported: {error_message}"
+    
+    except Exception as e:
+        logger.error(f"Error handling app_error: {e}")
+        return f"Failed to process error: {str(e)}"
 
 
 def main():

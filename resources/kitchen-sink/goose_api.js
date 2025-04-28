@@ -12,6 +12,7 @@
  *    - gooseRequestText("What is the capital of France?")
  *    - gooseRequestList("Give me a list of 5 book recommendations")
  *    - gooseRequestTable("Show me sales data by region", ["Region", "Revenue", "Growth"])
+ *    - reportError("An error occurred: Unable to load data")
  * 
  * 3. Each function returns a Promise that resolves with the response data.
  * 
@@ -176,5 +177,70 @@ async function gooseRequestTable(query, columns, options = {}) {
   message += ` Query: ${query}`;
   
   return sendGooseRequestAndWait(message, responseId, options);
+}
+
+/**
+ * Report an error to Goose
+ * @param {string} errorMessage - The error message to report
+ * @param {object} options - Additional options for the request
+ * @returns {Promise<string>} A promise that resolves with a confirmation message
+ */
+async function reportError(errorMessage, options = {}) {
+  if (!errorMessage) {
+    throw new Error("Error message is required");
+  }
+  
+  // Default options
+  const defaults = {
+    sessionId: 'web-client-session',
+    sessionWorkingDir: '/tmp'
+  };
+  
+  // Merge defaults with provided options
+  const config = { ...defaults, ...options };
+  
+  // Create the message instructing Goose to call app_error
+  const message = `Call the app_error tool with this error message: ${errorMessage}`;
+  
+  // Create the request body
+  const requestBody = {
+    messages: [
+      {
+        role: 'user',
+        created: Math.floor(Date.now() / 1000),
+        content: [
+          {
+            type: 'text',
+            text: message
+          }
+        ]
+      }
+    ],
+    session_working_dir: config.sessionWorkingDir
+  };
+  
+  try {
+    // Send the request to Goose
+    const response = await fetch(`http://localhost:${GOOSE_PORT}/reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Secret-Key': GOOSE_SERVER__SECRET_KEY
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    // Check if the response is ok
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    console.log('Error reported to Goose:', errorMessage);
+    return `Error reported: ${errorMessage}`;
+    
+  } catch (error) {
+    console.error('Error reporting to Goose:', error);
+    throw error;
+  }
 }
 

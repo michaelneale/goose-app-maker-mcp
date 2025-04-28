@@ -64,6 +64,21 @@ A JavaScript client for interacting with the Goose API. This client handles send
    }
    ```
 
+   **Error Reporting**
+   ```javascript
+   // Report errors back to Goose
+   try {
+     // Some code that might fail
+     const data = await fetchData();
+     processData(data);
+   } catch (error) {
+     // Report the error to Goose
+     await reportError(`Failed to fetch data: ${error.message}`);
+     // You can also display an error message to the user
+     showErrorToUser("Failed to load data. The error has been reported.");
+   }
+   ```
+
 3. The API functions return promises that resolve when the response is available, allowing for asynchronous operation.
 
 4. See the kitchen-sink example for a complete implementation of all three response types.

@@ -94,8 +94,8 @@ Using goose_api.js for dynamic content:
 
 Sharing or downloading apps: 
     * if google_drive extension (or similar) is installed and you need to publish the app:
-        - create a folder for the app to share (or where you are told to share it)
-        - upload the app contents (html, css, js, json etc) as files to the folder in drive
+        - create a folder for the app to share with the apps name (this may be under another folder if requested)
+        - upload the app contents (html, css, js, json etc) as files to the folder you created
         - you can update app contents but check with the user first, and be sure not to over write new files
     * with google_drive extension you can also download the app from a folder in google drive
     * if you are using the developer extension, you can use the developer tools to download the app as a zip file

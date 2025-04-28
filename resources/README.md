@@ -12,6 +12,10 @@ A dark mode company analysis dashboard that can be used as a template if needed
 
 A richer interactive app for performance reporting (but visually basic)
 
+## example3
+
+Simple todo app that persists to localStorage
+
 ## kitchen-sink
 
 A basic but more complete example including how to dynamically fetch data from goose in the app
@@ -19,6 +23,8 @@ A basic but more complete example including how to dynamically fetch data from g
 ### kitchen-sink/goose_api.js
 
 A JavaScript client for interacting with the Goose API. This client handles sending requests and receiving responses asynchronously. Copy this file to your app directory to enable communication with Goose.
+
+The goose api allows these apps to talk to a powerful agent to take action, interact with other apis and more. The apis send a message to the agent, and then the agent will provide the data async via another endpoint depending on the structured response requested (see below).
 
 #### Usage
 

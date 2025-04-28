@@ -4,7 +4,7 @@ This MCP (Model Context Protocol) servcer allows users to create, manage, and se
 
 ## Features
 
-- Create new web applications with custom HTML, CSS, and JavaScript
+- Create new web applications from basic instructions
 - Store apps in `~/.config/goose/app-maker-apps` directory (each app in its own subdirectory)
 - Serve web applications locally on demand
 - Open web applications in the default browser (and chromeless if possible)

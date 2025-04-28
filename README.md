@@ -1,6 +1,6 @@
 # Goose App Maker
 
-This MCP (Model Context Protocol) servcer allows users to create, manage, and serve web applications through Goose.
+This MCP (Model Context Protocol) sever allows users to create, manage, and serve web applications through Goose.
 
 ## Features
 

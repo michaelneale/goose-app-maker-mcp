@@ -78,7 +78,7 @@ The directory ~/.config/goose/app-maker-apps/[app-name]/ is where the app is sto
 
 Resources:
 - The resources directory is located at: {resources_dir} which has utilities and examples you can refer to.
-- For example apps and templates, refer to the examples in the [README.md]({readme_path})
+- For example apps, refer to the examples in the [README.md]({readme_path})
 - For apps requiring dynamic functionality or access to data sources/services, include [goose_api.js]({goose_api_path}) in your app
 
 Using goose_api.js for dynamic content:
@@ -108,8 +108,6 @@ Some of the tools available:
   apps_list - find existing apps 
   app_serve - serve an app locally
   app_open - open an app in a browser (macos)
-  app_update_file - update a file in an app
-  app_view_file - view a file in an app
   app_response - for sending data back to the app front end
   app_error - use this to see if there are error from the app
 """
@@ -170,111 +168,6 @@ def apps_list() -> Dict[str, Any]:
         logger.error(f"Error listing apps: {e}")
         return {"success": False, "error": f"Failed to list apps: {str(e)}"}
     
-#@mcp.tool()
-def app_update_file(app_name: str, file_path: str, content: str) -> Dict[str, Any]:
-    """
-    Update or create a file in an existing web application.
-    
-    Args:
-        app_name: Name of the application
-        file_path: Path to the file within the app directory
-        content: New content for the file
-    
-    Returns:
-        A dictionary containing the result of the operation
-    """
-    try:
-        # Find the app directory
-        app_path = os.path.join(APP_DIR, app_name)
-        if not os.path.exists(app_path):
-            return {
-                "success": False, 
-                "error": f"App '{app_name}' not found at {app_path}"
-            }
-        
-        # Create the full file path
-        full_file_path = os.path.join(app_path, file_path)
-        
-        # Create directories if needed
-        os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
-        
-        # Write file content
-        with open(full_file_path, 'w') as f:
-            f.write(content)
-        
-        # Update manifest if it exists
-        manifest_path = os.path.join(app_path, "goose-app-manifest.json")
-        if os.path.exists(manifest_path):
-            try:
-                with open(manifest_path, 'r') as f:
-                    manifest = json.load(f)
-                
-                if "files" not in manifest:
-                    manifest["files"] = []
-                
-                if file_path not in manifest["files"]:
-                    manifest["files"].append(file_path)
-                    manifest["updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                    
-                    with open(manifest_path, 'w') as f:
-                        json.dump(manifest, f, indent=2)
-            except Exception as e:
-                logger.warning(f"Error updating manifest: {e}")
-        
-        return {
-            "success": True,
-            "app_name": app_name,
-            "file_path": file_path,
-            "full_path": full_file_path,
-            "message": f"File '{file_path}' updated successfully in app '{app_name}'"
-        }
-    except Exception as e:
-        logger.error(f"Error updating app file: {e}")
-        return {"success": False, "error": f"Failed to update file: {str(e)}"}
-
-#@mcp.tool()
-def app_view_file(app_name: str, file_path: str) -> Dict[str, Any]:
-    """
-    View the content of a file in an existing web application.
-    
-    Args:
-        app_name: Name of the application
-        file_path: Path to the file within the app directory
-    
-    Returns:
-        A dictionary containing the content of the file
-    """
-    try:
-        # Find the app directory
-        app_path = os.path.join(APP_DIR, app_name)
-        if not os.path.exists(app_path):
-            return {
-                "success": False, 
-                "error": f"App '{app_name}' not found at {app_path}"
-            }
-        
-        # Create the full file path
-        full_file_path = os.path.join(app_path, file_path)
-        
-        if not os.path.exists(full_file_path):
-            return {
-                "success": False, 
-                "error": f"File '{file_path}' not found in app '{app_name}'"
-            }
-        
-        # Read file content
-        with open(full_file_path, 'r') as f:
-            content = f.read()
-        
-        return {
-            "success": True,
-            "app_name": app_name,
-            "file_path": file_path,
-            "content": content
-        }
-    except Exception as e:
-        logger.error(f"Error viewing app file: {e}")
-        return {"success": False, "error": f"Failed to view file: {str(e)}"}
 
 @mcp.tool()
 def app_delete(app_name: str) -> Dict[str, Any]:
@@ -327,6 +220,10 @@ def app_create(app_name: str, description: str = "") -> Dict[str, Any]:
     Or, you can replace the content with existing html/css/js files you have (just make sure to leave the goose_api.js file in the app dir)
 
     """
+    global http_server, server_port
+
+    if http_server:
+        return "There is already a server running. Please stop it before creating a new app, or consider if an existing app should be modified instead."
     try:
         # Sanitize app name (replace spaces with hyphens, remove special characters)
         safe_app_name = "".join(c if c.isalnum() else "-" for c in app_name).lower()
@@ -386,6 +283,10 @@ def app_serve(app_name: str) -> Dict[str, Any]:
         A dictionary containing the result of the operation
     """
     global http_server, server_port
+
+    if http_server:
+        return "There is already a server running"
+
     
     try:
         # Find the app directory

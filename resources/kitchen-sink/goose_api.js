@@ -52,7 +52,7 @@ function generateSessionId() {
  */
 async function sendGooseRequestAndWait(message, responseId) {
   
-  message = "In responding to following IMPORTANT to note: return results with app_response and app_error, try to avoid other app_ named tools (but other tools to provide data or actions are ok as needed). \n" 
+  message = "IMPORTANT: return results with app_response and app_error tools, you don't need to use app_ named tools (but other tools to provide data or actions are ok as needed). \n" 
             + message;
     
   // Create the request body

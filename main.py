@@ -41,6 +41,7 @@ response_locks = {}
 app_errors = []
 
 instructions = """
+This extension allows creation and running of casual web apps for Goose.
 You are an expert html5/CSS/js web app author for casual "apps" for goose. Use this toolkit when running/making apps for goose.
 
 Your job is to help users create and manage web applications that are stored in the ~/.config/goose/app-maker-apps directory.
@@ -90,22 +91,11 @@ Using goose_api.js for dynamic content:
 - For error reporting:
   - reportError(errorMessage) - Reports errors back to Goose
 - Example: const response = await gooseRequestList("List 5 best movies");
-- See resources/README.md for more detailed examples
-
-Sharing or downloading apps, if google_drive extension (or similar) is installed: 
-    * publishing the app:
-        - create a folder for the app to share with the apps name as a subfolder in a location suggested by the user (or default location)
-        - if there is already an app in that location (look for goose-app-manifest.json) - ask if they want to overwrite it and check the timestamps to make sure not accidentally over writing.
-        - upload the app contents (html, css, js, json etc) as files to the folder you created        
-    * downloading and running an app:
-       - find the app directory and download each of the files as needed into the app-maker-apps directory using the google drive extension    
-    * you can also search for existing apps in google drive (look for goose-app-manifest.json files which will be alongside the apps)    
-
+- See {readme_path} for more detailed examples
     
-
 Some of the tools available:
   app_create - use this when starting new
-  apps_list - find existing apps 
+  app_list - find existing apps 
   app_serve - serve an app locally
   app_open - open an app in a browser (macos)
   app_response - for sending data back to the app front end
@@ -123,7 +113,7 @@ mcp = FastMCP("Goose App Maker", instructions=instructions)
 
 
 @mcp.tool()
-def apps_list() -> Dict[str, Any]:
+def app_list() -> Dict[str, Any]:
     """
     List all available web applications.
     
@@ -275,6 +265,8 @@ def app_serve(app_name: str) -> Dict[str, Any]:
     """
     Serve an existing web application on a local HTTP server.
     The server will automatically find an available port.
+
+    Can only serve one app at a time
     
     Args:
         app_name: Name of the application to serve
@@ -503,6 +495,7 @@ def app_open(app_name: str) -> Dict[str, Any]:
     """
     Open an app in the default web browser. If the app is not currently being served,
     it will be served first.
+    Can only open one app at a time.
     
     Args:
         app_name: Name of the application to open

@@ -650,29 +650,40 @@ def app_response(response_id: str,
         return False
 
 @mcp.tool()
-def app_error(error_message: str = None) -> str:
+def app_error(error_message: str = None, clear = False) -> str:
     """
     Report an error from the app or retrieve the list of errors.
+    This is useful while developing or debugging the app as it allows errors (or any messages) to be reported and monitored
     
     Args:
         error_message: Optional error message to report. If None, returns the list of errors.
+        clear: Optional, If True, clears the list of errors
     
     Returns:
         A string containing the list of errors if error_message is None,
         otherwise a confirmation message.
     """
     global app_errors
+
     
     try:
         # If no error message is provided, return the list of errors
         if error_message is None:
+            # if app errors is empty
             if not app_errors:
-                return "No errors reported."
+               return "No errors reported. If needed, consider adding in some calls to reportError() in your app code to help with debugging."
             
             # Format the errors as a numbered list
             error_list = "\n".join([f"{i+1}. {err}" for i, err in enumerate(app_errors)])
+
+            if clear:
+                app_errors.clear()
+
             return f"Reported errors:\n{error_list}"
         
+        if clear:
+            app_errors.clear()
+
         # Add the error to the list with a timestamp
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         app_errors.append(f"[{timestamp}] {error_message}")

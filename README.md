@@ -1,9 +1,13 @@
 # Goose App Maker
 
-This MCP (Model Context Protocol) sever allows users to create, manage, and serve web applications through Goose.
+This MCP (Model Context Protocol) sever allows users to create, manage, and serve web applications through Goose, that make use of Goose for api calls, data access, and more.
 
 # Install
+
 <a href="https://michaelneale.github.io/goose-redirect/?cmd=uvx&arg=app-maker-mcp@latest&id=goose-app-maker&name=Goose%20App%20Maker&description=Create%20and%20share%20apps%20that%20use%20goose">click here to install in goose 🪿</a>
+
+![image](https://github.com/user-attachments/assets/4ddc14f8-7c83-4a1e-8e11-87c557355c9e)
+
 
 ## Features
 

@@ -16,6 +16,11 @@ A richer interactive app for performance reporting (but visually basic)
 
 Simple todo app that persists to localStorage
 
+## example4
+
+A beautiful app that gets a list of flowers from goose and can be refreshed
+
+
 ## kitchen-sink
 
 A basic but more complete example including how to dynamically fetch data from goose in the app. It also demonstrates automatic error handling and reporting.

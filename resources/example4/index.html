@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flower List</title>
+    <link rel="stylesheet" href="style.css?v=1.0">    
+    <!-- Global error handling script -->
+    <script>
+        // Global error handler to capture and report all unhandled errors
+        window.onerror = function(message, source, lineno, colno, error) {
+            // Make sure goose_api.js is loaded before trying to report errors
+            if (typeof reportError === 'function') {
+                reportError(`Unhandled error: ${message} at ${source}:${lineno}:${colno} | ${error ? error.stack : 'No stack trace available'}`);
+            } else {
+                console.error('Error occurred before goose_api.js was loaded:', message);
+                // Queue the error to be reported once the API is loaded
+                window.addEventListener('load', function() {
+                    if (typeof reportError === 'function') {
+                        reportError(`Queued error: ${message} at ${source}:${lineno}:${colno} | ${error ? error.stack : 'No stack trace available'}`);
+                    }
+                });
+            }
+            // Display error in console
+            console.error('Global error handler:', message, error);
+            // Return true to prevent the default browser error handler
+            return true;
+        };
+
+        // Capture unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+            const error = event.reason;
+            const message = error ? (error.message || 'Unhandled promise rejection') : 'Unhandled promise rejection';
+            
+            if (typeof reportError === 'function') {
+                reportError(`Unhandled promise rejection: ${message} | ${error ? error.stack : 'No stack trace available'}`);
+            } else {
+                console.error('Promise rejection occurred before goose_api.js was loaded:', message);
+                // Queue the error to be reported once the API is loaded
+                window.addEventListener('load', function() {
+                    if (typeof reportError === 'function') {
+                        reportError(`Queued promise rejection: ${message} | ${error ? error.stack : 'No stack trace available'}`);
+                    }
+                });
+            }
+            
+            console.error('Unhandled promise rejection:', error);
+            // Prevent the default handling
+            event.preventDefault();
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Flower List</h1>
+            <p class="subtitle">Discover beautiful flowers</p>
+        </header>
+        
+        <main>
+            <section class="flower-section">
+                <div class="button-container">
+                    <button id="get-flowers-btn" class="btn">Get Random Flowers</button>
+                </div>
+                
+                <div class="flowers-container">
+                    <h2>Flower List</h2>
+                    <div id="loading" class="loading hidden">Loading...</div>
+                    <ul id="flower-list" class="flower-list">
+                        <!-- Flower items will be added here by JavaScript -->
+                        <li class="placeholder">Click the button above to load flowers</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>Created with Goose App Maker - <span id="current-date"></span></p>
+        </footer>
+    </div>
+    
+    <script src="goose_api.js?v=2"></script>
+    <script src="script.js?v=2"></script>
+</body>
+</html>

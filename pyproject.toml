@@ -1,6 +1,6 @@
 [project]
-name = "goose-app-maker-mcp"
-version = "0.0.1"
+name = "app-maker-mcp"
+version = "0.0.3"
 description = "Create and serve web applications that can use goose, quickly"
 readme = "README.md"
 requires-python = ">=3.12"

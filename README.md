@@ -2,6 +2,9 @@
 
 This MCP (Model Context Protocol) sever allows users to create, manage, and serve web applications through Goose.
 
+# Install
+<a href="https://michaelneale.github.io/goose-redirect/?cmd=uvx&arg=app-maker-mcp@latest&id=goose-app-maker&name=Goose%20App%20Maker&description=Create%20and%20share%20apps%20that%20use%20goose">click here to install in goose 🪿</a>
+
 ## Features
 
 - Create new web applications from basic instructions

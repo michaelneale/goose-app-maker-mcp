@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+goose_app_maker_mcp.egg-info/PKG-INFO
+goose_app_maker_mcp.egg-info/SOURCES.txt
+goose_app_maker_mcp.egg-info/dependency_links.txt
+goose_app_maker_mcp.egg-info/entry_points.txt
+goose_app_maker_mcp.egg-info/requires.txt
+goose_app_maker_mcp.egg-info/top_level.txt

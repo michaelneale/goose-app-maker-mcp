@@ -18,7 +18,7 @@ Simple todo app that persists to localStorage
 
 ## example4
 
-A beautiful app that gets a list of flowers from goose and can be refreshed
+A beautiful dark mode app that gets a list of flowers from goose and can be refreshed
 
 
 ## kitchen-sink

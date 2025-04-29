@@ -7,6 +7,7 @@ import json
 import shutil
 import http.server
 import socketserver
+import threading
 from typing import Dict, Any, List
 from pathlib import Path
 
@@ -33,9 +34,10 @@ GOOSE_API_PATH = os.path.join(RESOURCES_DIR, "kitchen-sink/goose_api.js")
 http_server = None
 server_port = 8000  # Default port
 
-# Global variable to store app responses and their associated events
-app_responses = {}
-response_locks = {}
+# Global variable to store app response
+app_response = None
+response_lock = threading.Condition()
+response_ready = False
 
 # Global variable to store app errors
 app_errors = []
@@ -99,7 +101,7 @@ Some of the tools available:
   app_serve - serve an app locally
   app_open - open an app in a browser (macos)
   app_response - for sending data back to the app front end
-  app_error - use this to see if there are error from the app
+  app_error - use this to see if there are error from the app, useful when modifying an app
 """
 
 # Format the instructions with dynamic paths
@@ -209,6 +211,8 @@ def app_create(app_name: str, description: str = "") -> Dict[str, Any]:
     After this, consider how you want to change the app to meet the functionality, look at the examples in resources dir if you like.
     Or, you can replace the content with existing html/css/js files you have (just make sure to leave the goose_api.js file in the app dir)
 
+    Use the app_error tool once it is opened and user has interacted (or has started) to check for errors you can correct the first time, this is important to know it works.
+
     """
     global http_server, server_port
 
@@ -274,11 +278,14 @@ def app_serve(app_name: str) -> Dict[str, Any]:
     Returns:
         A dictionary containing the result of the operation
     """
-    global http_server, server_port
+    global http_server, server_port, app_response, response_ready
 
     if http_server:
         return "There is already a server running"
 
+    # Reset response state
+    app_response = None
+    response_ready = False
     
     try:
         # Find the app directory
@@ -327,44 +334,53 @@ def app_serve(app_name: str) -> Dict[str, Any]:
             
             def do_GET(self):
                 # Check if this is a wait_for_response request
-                if self.path.startswith('/wait_for_response/'):
-                    import threading
-                    import time
+                if self.path.startswith('/wait_for_response'):
+                    global app_response, response_lock, response_ready
                     
-                    response_id = self.path.split('/')[-1]
+                    # Reset response state for a new request
+                    if self.path.startswith('/wait_for_response/reset'):
+                        with response_lock:
+                            app_response = None
+                            response_ready = False
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        response_data = json.dumps({"success": True, "message": "Response state reset"})
+                        self.wfile.write(response_data.encode('utf-8'))
+                        return
                     
                     # Check if response already exists
-                    if response_id in app_responses:
+                    if app_response is not None and response_ready:
                         # Return the response immediately
                         self.send_response(200)
                         self.send_header('Content-type', 'application/json')
                         self.end_headers()
-                        response_data = json.dumps({"success": True, "data": app_responses[response_id]})
+                        response_data = json.dumps({"success": True, "data": app_response})
                         self.wfile.write(response_data.encode('utf-8'))
+                        
+                        # Reset the response state after sending it
+                        with response_lock:
+                            app_response = None
+                            response_ready = False
                         return
                     
-                    # Create a condition variable for this response if it doesn't exist
-                    if response_id not in response_locks:
-                        response_locks[response_id] = (threading.Condition(), False)  # (lock, response_ready)
-                    
                     # Wait for the response with timeout
-                    lock, response_ready = response_locks[response_id]
-                    with lock:
+                    with response_lock:
                         # Wait for up to 180 seconds for the response to be ready
                         start_time = time.time()
                         while not response_ready and time.time() - start_time < 180:
-                            lock.wait(180 - (time.time() - start_time))
+                            response_lock.wait(180 - (time.time() - start_time))
                             
                             # Check if the response is now available
-                            if response_id in app_responses:
-                                response_ready = True
+                            if response_ready and app_response is not None:
+                                break
                         
                         # Check if we got the response or timed out
-                        if response_ready or response_id in app_responses:
+                        if response_ready and app_response is not None:
                             self.send_response(200)
                             self.send_header('Content-type', 'application/json')
                             self.end_headers()
-                            response_data = json.dumps({"success": True, "data": app_responses[response_id]})
+                            response_data = json.dumps({"success": True, "data": app_response})
                             self.wfile.write(response_data.encode('utf-8'))
                         else:
                             # Timeout occurred
@@ -469,7 +485,7 @@ def app_stop_server() -> Dict[str, Any]:
     Returns:
         A dictionary containing the result of the operation
     """
-    global http_server
+    global http_server, app_response, response_ready
     
     try:
         if http_server:
@@ -477,6 +493,11 @@ def app_stop_server() -> Dict[str, Any]:
             http_server.shutdown()
             http_server.server_close()
             http_server = None
+            
+            # Reset response state
+            app_response = None
+            response_ready = False
+            
             return {
                 "success": True,
                 "message": "HTTP server stopped successfully"
@@ -592,8 +613,7 @@ def app_refresh() -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to refresh app: {str(e)}"}
 
 @mcp.tool()
-def app_response(response_id: str, 
-                string_data: str = None, 
+def app_response(string_data: str = None, 
                 list_data: List[str] = None, 
                 table_data: Dict[str, List] = None) -> bool:
     """
@@ -601,7 +621,6 @@ def app_response(response_id: str,
     Provide only one of string_data, list_data, or table_data.
     
     Args:
-        response_id: Unique identifier for the response which will be accessed via another API.
         string_data: Optional string response
         list_data: Optional list of strings response
         table_data: Optional table response with columns and rows
@@ -610,7 +629,7 @@ def app_response(response_id: str,
     Returns:
         True if the response was stored successfully, False otherwise
     """
-    global app_responses, response_locks
+    global app_response, response_lock, response_ready
     
     try:
         # Check that exactly one data type is provided
@@ -621,21 +640,23 @@ def app_response(response_id: str,
         
         # Determine the type of data and store it
         if string_data is not None:
-            app_responses[response_id] = string_data
+            data = string_data
         elif list_data is not None:
-            app_responses[response_id] = list_data
+            data = list_data
         elif table_data is not None:
             # Validate table_data format
             if not isinstance(table_data, dict) or "columns" not in table_data or "rows" not in table_data:
                 logger.error("Table data must have 'columns' and 'rows' keys")
                 return False
-            app_responses[response_id] = table_data
+            data = table_data
         
-        # Notify any waiting threads
-        if response_id in response_locks:
-            with response_locks[response_id][0]:
-                response_locks[response_id][1] = True
-                response_locks[response_id][0].notify_all()
+        # Store the response and notify waiting threads
+        with response_lock:
+            global app_response  # Declare global inside the function block
+            app_response = data
+            global response_ready  # Declare global inside the function block
+            response_ready = True
+            response_lock.notify_all()
         
         return True
     except Exception as e:

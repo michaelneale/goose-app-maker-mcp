@@ -29,32 +29,30 @@ const GOOSE_PORT = '$GOOSE_PORT';
 const GOOSE_SERVER__SECRET_KEY = '$GOOSE_SERVER__SECRET_KEY';
 
 /**
- * Generate a random response ID
- * @returns {string} A random string to use as response ID
- */
-function generateResponseId() {
-  return Math.random().toString(36).substring(2, 15);
-}
-
-/**
  * Generate a random session ID for interaction with Goose
  */
 function generateSessionId() {
   return Math.random().toString(36).substring(2, 15);
 }
 
+const gooseAppSession = generateSessionId();
+
 
 /**
  * Send a request to Goose and wait for the response
  * @param {string} message - The message to send to Goose
- * @param {string} responseId - The ID to use for the response
  * @returns {Promise} A promise that resolves when the response is received
  */
-async function sendGooseRequestAndWait(message, responseId) {
-  
-  message = "IMPORTANT: return results with app_response and app_error tools, you don't need to use app_ named tools (but other tools to provide data or actions are ok as needed). \n" 
-            + message;
-    
+async function sendGooseRequestAndWait(message) {
+  // Reset any previous response state
+  try {
+    await fetch('/wait_for_response/reset');
+    console.log('Response state reset');
+  } catch (error) {
+    console.warn('Failed to reset response state:', error);
+    // Continue anyway
+  }
+      
   // Create the request body
   const requestBody = {
     messages: [
@@ -70,7 +68,7 @@ async function sendGooseRequestAndWait(message, responseId) {
       }
     ],
     session_working_dir: '/tmp', 
-    session_id: generateSessionId(),
+    session_id: gooseAppSession,
   };
   
   console.log('Sending request to goose-server on port', GOOSE_PORT);
@@ -92,10 +90,10 @@ async function sendGooseRequestAndWait(message, responseId) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
     
-    console.log('Request sent successfully, waiting for response with ID:', responseId);
+    console.log('Request sent successfully, waiting for response');
     
     // Wait for the response to be available
-    const waitResponse = await waitForResponse(responseId);
+    const waitResponse = await waitForResponse();
     return waitResponse;
     
   } catch (error) {
@@ -105,16 +103,15 @@ async function sendGooseRequestAndWait(message, responseId) {
 }
 
 /**
- * Wait for a response with the given ID
- * @param {string} responseId - The ID of the response to wait for
+ * Wait for a response
  * @returns {Promise} A promise that resolves with the response data
  */
-async function waitForResponse(responseId) {
-  console.log('Waiting for response with ID:', responseId);
+async function waitForResponse() {
+  console.log('Waiting for response');
   
   try {
     // Poll the wait_for_response endpoint
-    const response = await fetch(`/wait_for_response/${responseId}`);
+    const response = await fetch(`/wait_for_response`);
     
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
@@ -140,10 +137,9 @@ async function waitForResponse(responseId) {
  * @returns {Promise<string>} A promise that resolves with the text response
  */
 async function gooseRequestText(query) {
-  const responseId = generateResponseId();
-  const message = `After doing the following, call the app_response tool with response_id="${responseId}", string_data=your response to the following query.\n Query:\n ${query}`;
+  const message = `Return the results from the query, by calling the app_response tool with string_data parameter.\n Query:\n ${query}`;
   
-  return sendGooseRequestAndWait(message, responseId);
+  return sendGooseRequestAndWait(message);
 }
 
 /**
@@ -152,10 +148,9 @@ async function gooseRequestText(query) {
  * @returns {Promise<Array<string>>} A promise that resolves with the list response
  */
 async function gooseRequestList(query) {
-  const responseId = generateResponseId();
-  const message = `After doing the following, call the app_response tool with response_id="${responseId}", list_data=your response to the following query as a list of strings. Query: ${query}`;
+  const message = `Return the results from the query, by calling the app_response tool with the list_data parameter as a list of strings. Query: ${query}`;
   
-  return sendGooseRequestAndWait(message, responseId);
+  return sendGooseRequestAndWait(message);
 }
 
 /**
@@ -169,14 +164,13 @@ async function gooseRequestTable(query, columns) {
     throw new Error("Column names are required for table requests");
   }
   
-  const responseId = generateResponseId();
-  let message = `After doing the following, call the app_response tool with response_id="${responseId}", table_data=your response to the following query as a table.`;
+  let message = `Return the results from the query, by calling the app_response tool with table_data parameter`;
   
   message += ` Use these columns: ${JSON.stringify(columns)}.`;
   message += ` The table_data should be in this format: {"columns": ${JSON.stringify(columns)}, "rows": [["row1col1", "row1col2", ...], ...]}`;
   message += ` Query: ${query}`;
   
-  return sendGooseRequestAndWait(message, responseId);
+  return sendGooseRequestAndWait(message);
 }
 
 /**
@@ -207,7 +201,8 @@ async function reportError(errorMessage) {
         ]
       }
     ],
-    session_working_dir: '/tmp'
+    session_working_dir: '/tmp', 
+    session_id: gooseAppSession,
   };
   
   try {

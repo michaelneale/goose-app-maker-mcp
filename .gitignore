@@ -1,3 +1,4 @@
 .venv
 app_maker_*
 uv.lock
+dist

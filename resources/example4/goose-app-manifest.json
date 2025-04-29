@@ -1,0 +1,11 @@
+{
+  "name": "flower-list",
+  "description": "An app that displays a list of flowers with a button to get random flower lists",
+  "created": "2025-04-29 17:39:13",
+  "files": [
+    "index.html",
+    "style.css",
+    "script.js",
+    "goose_api.js"
+  ]
+}

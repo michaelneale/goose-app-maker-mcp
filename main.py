@@ -7,6 +7,7 @@ import json
 import shutil
 import http.server
 import socketserver
+import threading
 from typing import Dict, Any, List
 from pathlib import Path
 
@@ -33,14 +34,16 @@ GOOSE_API_PATH = os.path.join(RESOURCES_DIR, "kitchen-sink/goose_api.js")
 http_server = None
 server_port = 8000  # Default port
 
-# Global variable to store app responses and their associated events
-app_responses = {}
-response_locks = {}
+# Global variable to store app response
+app_response = None
+response_lock = threading.Condition()
+response_ready = False
 
 # Global variable to store app errors
 app_errors = []
 
 instructions = """
+This extension allows creation and running of casual web apps for Goose.
 You are an expert html5/CSS/js web app author for casual "apps" for goose. Use this toolkit when running/making apps for goose.
 
 Your job is to help users create and manage web applications that are stored in the ~/.config/goose/app-maker-apps directory.
@@ -78,7 +81,7 @@ The directory ~/.config/goose/app-maker-apps/[app-name]/ is where the app is sto
 
 Resources:
 - The resources directory is located at: {resources_dir} which has utilities and examples you can refer to.
-- For example apps and templates, refer to the examples in the [README.md]({readme_path})
+- For example apps, refer to the examples in the [README.md]({readme_path})
 - For apps requiring dynamic functionality or access to data sources/services, include [goose_api.js]({goose_api_path}) in your app
 
 Using goose_api.js for dynamic content:
@@ -90,28 +93,15 @@ Using goose_api.js for dynamic content:
 - For error reporting:
   - reportError(errorMessage) - Reports errors back to Goose
 - Example: const response = await gooseRequestList("List 5 best movies");
-- See resources/README.md for more detailed examples
-
-Sharing or downloading apps, if google_drive extension (or similar) is installed: 
-    * publishing the app:
-        - create a folder for the app to share with the apps name as a subfolder in a location suggested by the user (or default location)
-        - if there is already an app in that location (look for goose-app-manifest.json) - ask if they want to overwrite it and check the timestamps to make sure not accidentally over writing.
-        - upload the app contents (html, css, js, json etc) as files to the folder you created        
-    * downloading and running an app:
-       - find the app directory and download each of the files as needed into the app-maker-apps directory using the google drive extension    
-    * you can also search for existing apps in google drive (look for goose-app-manifest.json files which will be alongside the apps)    
-
+- See {readme_path} for more detailed examples
     
-
 Some of the tools available:
   app_create - use this when starting new
-  apps_list - find existing apps 
+  app_list - find existing apps 
   app_serve - serve an app locally
   app_open - open an app in a browser (macos)
-  app_update_file - update a file in an app
-  app_view_file - view a file in an app
   app_response - for sending data back to the app front end
-  app_error - use this to see if there are error from the app
+  app_error - use this to see if there are error from the app, useful when modifying an app
 """
 
 # Format the instructions with dynamic paths
@@ -125,7 +115,7 @@ mcp = FastMCP("Goose App Maker", instructions=instructions)
 
 
 @mcp.tool()
-def apps_list() -> Dict[str, Any]:
+def app_list() -> Dict[str, Any]:
     """
     List all available web applications.
     
@@ -170,111 +160,6 @@ def apps_list() -> Dict[str, Any]:
         logger.error(f"Error listing apps: {e}")
         return {"success": False, "error": f"Failed to list apps: {str(e)}"}
     
-#@mcp.tool()
-def app_update_file(app_name: str, file_path: str, content: str) -> Dict[str, Any]:
-    """
-    Update or create a file in an existing web application.
-    
-    Args:
-        app_name: Name of the application
-        file_path: Path to the file within the app directory
-        content: New content for the file
-    
-    Returns:
-        A dictionary containing the result of the operation
-    """
-    try:
-        # Find the app directory
-        app_path = os.path.join(APP_DIR, app_name)
-        if not os.path.exists(app_path):
-            return {
-                "success": False, 
-                "error": f"App '{app_name}' not found at {app_path}"
-            }
-        
-        # Create the full file path
-        full_file_path = os.path.join(app_path, file_path)
-        
-        # Create directories if needed
-        os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
-        
-        # Write file content
-        with open(full_file_path, 'w') as f:
-            f.write(content)
-        
-        # Update manifest if it exists
-        manifest_path = os.path.join(app_path, "goose-app-manifest.json")
-        if os.path.exists(manifest_path):
-            try:
-                with open(manifest_path, 'r') as f:
-                    manifest = json.load(f)
-                
-                if "files" not in manifest:
-                    manifest["files"] = []
-                
-                if file_path not in manifest["files"]:
-                    manifest["files"].append(file_path)
-                    manifest["updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                    
-                    with open(manifest_path, 'w') as f:
-                        json.dump(manifest, f, indent=2)
-            except Exception as e:
-                logger.warning(f"Error updating manifest: {e}")
-        
-        return {
-            "success": True,
-            "app_name": app_name,
-            "file_path": file_path,
-            "full_path": full_file_path,
-            "message": f"File '{file_path}' updated successfully in app '{app_name}'"
-        }
-    except Exception as e:
-        logger.error(f"Error updating app file: {e}")
-        return {"success": False, "error": f"Failed to update file: {str(e)}"}
-
-#@mcp.tool()
-def app_view_file(app_name: str, file_path: str) -> Dict[str, Any]:
-    """
-    View the content of a file in an existing web application.
-    
-    Args:
-        app_name: Name of the application
-        file_path: Path to the file within the app directory
-    
-    Returns:
-        A dictionary containing the content of the file
-    """
-    try:
-        # Find the app directory
-        app_path = os.path.join(APP_DIR, app_name)
-        if not os.path.exists(app_path):
-            return {
-                "success": False, 
-                "error": f"App '{app_name}' not found at {app_path}"
-            }
-        
-        # Create the full file path
-        full_file_path = os.path.join(app_path, file_path)
-        
-        if not os.path.exists(full_file_path):
-            return {
-                "success": False, 
-                "error": f"File '{file_path}' not found in app '{app_name}'"
-            }
-        
-        # Read file content
-        with open(full_file_path, 'r') as f:
-            content = f.read()
-        
-        return {
-            "success": True,
-            "app_name": app_name,
-            "file_path": file_path,
-            "content": content
-        }
-    except Exception as e:
-        logger.error(f"Error viewing app file: {e}")
-        return {"success": False, "error": f"Failed to view file: {str(e)}"}
 
 @mcp.tool()
 def app_delete(app_name: str) -> Dict[str, Any]:
@@ -326,7 +211,13 @@ def app_create(app_name: str, description: str = "") -> Dict[str, Any]:
     After this, consider how you want to change the app to meet the functionality, look at the examples in resources dir if you like.
     Or, you can replace the content with existing html/css/js files you have (just make sure to leave the goose_api.js file in the app dir)
 
+    Use the app_error tool once it is opened and user has interacted (or has started) to check for errors you can correct the first time, this is important to know it works.
+
     """
+    global http_server, server_port
+
+    if http_server:
+        return "There is already a server running. Please stop it before creating a new app, or consider if an existing app should be modified instead."
     try:
         # Sanitize app name (replace spaces with hyphens, remove special characters)
         safe_app_name = "".join(c if c.isalnum() else "-" for c in app_name).lower()
@@ -378,6 +269,8 @@ def app_serve(app_name: str) -> Dict[str, Any]:
     """
     Serve an existing web application on a local HTTP server.
     The server will automatically find an available port.
+
+    Can only serve one app at a time
     
     Args:
         app_name: Name of the application to serve
@@ -385,7 +278,14 @@ def app_serve(app_name: str) -> Dict[str, Any]:
     Returns:
         A dictionary containing the result of the operation
     """
-    global http_server, server_port
+    global http_server, server_port, app_response, response_ready
+
+    if http_server:
+        return "There is already a server running"
+
+    # Reset response state
+    app_response = None
+    response_ready = False
     
     try:
         # Find the app directory
@@ -434,44 +334,53 @@ def app_serve(app_name: str) -> Dict[str, Any]:
             
             def do_GET(self):
                 # Check if this is a wait_for_response request
-                if self.path.startswith('/wait_for_response/'):
-                    import threading
-                    import time
+                if self.path.startswith('/wait_for_response'):
+                    global app_response, response_lock, response_ready
                     
-                    response_id = self.path.split('/')[-1]
+                    # Reset response state for a new request
+                    if self.path.startswith('/wait_for_response/reset'):
+                        with response_lock:
+                            app_response = None
+                            response_ready = False
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        response_data = json.dumps({"success": True, "message": "Response state reset"})
+                        self.wfile.write(response_data.encode('utf-8'))
+                        return
                     
                     # Check if response already exists
-                    if response_id in app_responses:
+                    if app_response is not None and response_ready:
                         # Return the response immediately
                         self.send_response(200)
                         self.send_header('Content-type', 'application/json')
                         self.end_headers()
-                        response_data = json.dumps({"success": True, "data": app_responses[response_id]})
+                        response_data = json.dumps({"success": True, "data": app_response})
                         self.wfile.write(response_data.encode('utf-8'))
+                        
+                        # Reset the response state after sending it
+                        with response_lock:
+                            app_response = None
+                            response_ready = False
                         return
                     
-                    # Create a condition variable for this response if it doesn't exist
-                    if response_id not in response_locks:
-                        response_locks[response_id] = (threading.Condition(), False)  # (lock, response_ready)
-                    
                     # Wait for the response with timeout
-                    lock, response_ready = response_locks[response_id]
-                    with lock:
+                    with response_lock:
                         # Wait for up to 180 seconds for the response to be ready
                         start_time = time.time()
                         while not response_ready and time.time() - start_time < 180:
-                            lock.wait(180 - (time.time() - start_time))
+                            response_lock.wait(180 - (time.time() - start_time))
                             
                             # Check if the response is now available
-                            if response_id in app_responses:
-                                response_ready = True
+                            if response_ready and app_response is not None:
+                                break
                         
                         # Check if we got the response or timed out
-                        if response_ready or response_id in app_responses:
+                        if response_ready and app_response is not None:
                             self.send_response(200)
                             self.send_header('Content-type', 'application/json')
                             self.end_headers()
-                            response_data = json.dumps({"success": True, "data": app_responses[response_id]})
+                            response_data = json.dumps({"success": True, "data": app_response})
                             self.wfile.write(response_data.encode('utf-8'))
                         else:
                             # Timeout occurred
@@ -576,7 +485,7 @@ def app_stop_server() -> Dict[str, Any]:
     Returns:
         A dictionary containing the result of the operation
     """
-    global http_server
+    global http_server, app_response, response_ready
     
     try:
         if http_server:
@@ -584,6 +493,11 @@ def app_stop_server() -> Dict[str, Any]:
             http_server.shutdown()
             http_server.server_close()
             http_server = None
+            
+            # Reset response state
+            app_response = None
+            response_ready = False
+            
             return {
                 "success": True,
                 "message": "HTTP server stopped successfully"
@@ -602,6 +516,7 @@ def app_open(app_name: str) -> Dict[str, Any]:
     """
     Open an app in the default web browser. If the app is not currently being served,
     it will be served first.
+    Can only open one app at a time.
     
     Args:
         app_name: Name of the application to open
@@ -698,8 +613,7 @@ def app_refresh() -> Dict[str, Any]:
         return {"success": False, "error": f"Failed to refresh app: {str(e)}"}
 
 @mcp.tool()
-def app_response(response_id: str, 
-                string_data: str = None, 
+def app_response(string_data: str = None, 
                 list_data: List[str] = None, 
                 table_data: Dict[str, List] = None) -> bool:
     """
@@ -707,7 +621,6 @@ def app_response(response_id: str,
     Provide only one of string_data, list_data, or table_data.
     
     Args:
-        response_id: Unique identifier for the response which will be accessed via another API.
         string_data: Optional string response
         list_data: Optional list of strings response
         table_data: Optional table response with columns and rows
@@ -716,7 +629,7 @@ def app_response(response_id: str,
     Returns:
         True if the response was stored successfully, False otherwise
     """
-    global app_responses, response_locks
+    global app_response, response_lock, response_ready
     
     try:
         # Check that exactly one data type is provided
@@ -727,21 +640,23 @@ def app_response(response_id: str,
         
         # Determine the type of data and store it
         if string_data is not None:
-            app_responses[response_id] = string_data
+            data = string_data
         elif list_data is not None:
-            app_responses[response_id] = list_data
+            data = list_data
         elif table_data is not None:
             # Validate table_data format
             if not isinstance(table_data, dict) or "columns" not in table_data or "rows" not in table_data:
                 logger.error("Table data must have 'columns' and 'rows' keys")
                 return False
-            app_responses[response_id] = table_data
+            data = table_data
         
-        # Notify any waiting threads
-        if response_id in response_locks:
-            with response_locks[response_id][0]:
-                response_locks[response_id][1] = True
-                response_locks[response_id][0].notify_all()
+        # Store the response and notify waiting threads
+        with response_lock:
+            global app_response  # Declare global inside the function block
+            app_response = data
+            global response_ready  # Declare global inside the function block
+            response_ready = True
+            response_lock.notify_all()
         
         return True
     except Exception as e:
@@ -749,29 +664,40 @@ def app_response(response_id: str,
         return False
 
 @mcp.tool()
-def app_error(error_message: str = None) -> str:
+def app_error(error_message: str = None, clear = False) -> str:
     """
     Report an error from the app or retrieve the list of errors.
+    This is useful while developing or debugging the app as it allows errors (or any messages) to be reported and monitored
     
     Args:
         error_message: Optional error message to report. If None, returns the list of errors.
+        clear: Optional, If True, clears the list of errors
     
     Returns:
         A string containing the list of errors if error_message is None,
         otherwise a confirmation message.
     """
     global app_errors
+
     
     try:
         # If no error message is provided, return the list of errors
         if error_message is None:
+            # if app errors is empty
             if not app_errors:
-                return "No errors reported."
+               return "No errors reported. If needed, consider adding in some calls to reportError() in your app code to help with debugging."
             
             # Format the errors as a numbered list
             error_list = "\n".join([f"{i+1}. {err}" for i, err in enumerate(app_errors)])
+
+            if clear:
+                app_errors.clear()
+
             return f"Reported errors:\n{error_list}"
         
+        if clear:
+            app_errors.clear()
+
         # Add the error to the list with a timestamp
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         app_errors.append(f"[{timestamp}] {error_message}")

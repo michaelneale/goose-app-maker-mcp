@@ -16,9 +16,14 @@ A richer interactive app for performance reporting (but visually basic)
 
 Simple todo app that persists to localStorage
 
+## example4
+
+A beautiful dark mode app that gets a list of flowers from goose and can be refreshed
+
+
 ## kitchen-sink
 
-A basic but more complete example including how to dynamically fetch data from goose in the app
+A basic but more complete example including how to dynamically fetch data from goose in the app. It also demonstrates automatic error handling and reporting.
 
 ### kitchen-sink/goose_api.js
 
@@ -85,8 +90,56 @@ The goose api allows these apps to talk to a powerful agent to take action, inte
    }
    ```
 
+   **Global Error Handling**
+   
+   The kitchen-sink example includes global error handling that automatically reports all unhandled errors to Goose. To implement this in your app, add the following script to the head of your HTML:
+   
+   ```javascript
+   <script>
+     // Global error handler to capture and report all unhandled errors
+     window.onerror = function(message, source, lineno, colno, error) {
+       // Make sure goose_api.js is loaded before trying to report errors
+       if (typeof reportError === 'function') {
+         reportError(`Unhandled error: ${message} at ${source}:${lineno}:${colno} | ${error ? error.stack : 'No stack trace available'}`);
+       } else {
+         console.error('Error occurred before goose_api.js was loaded:', message);
+         // Queue the error to be reported once the API is loaded
+         window.addEventListener('load', function() {
+           if (typeof reportError === 'function') {
+             reportError(`Queued error: ${message} at ${source}:${lineno}:${colno} | ${error ? error.stack : 'No stack trace available'}`);
+           }
+         });
+       }
+       // Display error in console
+       console.error('Global error handler:', message, error);
+       // Return true to prevent the default browser error handler
+       return true;
+     };
+
+     // Capture unhandled promise rejections
+     window.addEventListener('unhandledrejection', function(event) {
+       const error = event.reason;
+       const message = error ? (error.message || 'Unhandled promise rejection') : 'Unhandled promise rejection';
+       
+       if (typeof reportError === 'function') {
+         reportError(`Unhandled promise rejection: ${message} | ${error ? error.stack : 'No stack trace available'}`);
+       } else {
+         console.error('Promise rejection occurred before goose_api.js was loaded:', message);
+         // Queue the error to be reported once the API is loaded
+         window.addEventListener('load', function() {
+           if (typeof reportError === 'function') {
+             reportError(`Queued promise rejection: ${message} | ${error ? error.stack : 'No stack trace available'}`);
+           }
+         });
+       }
+       
+       console.error('Unhandled promise rejection:', error);
+       // Prevent the default handling
+       event.preventDefault();
+     });
+   </script>
+   ```
+
    Note: error reporting is as you develop the app, you can look at app_error tool to fetch recent errors to help debug things for the user on their behalf if things aren't working.
 
-3. The API functions return promises that resolve when the response is available, allowing for asynchronous operation.
-
-4. See the kitchen-sink example for a complete implementation of all three response types.
+The API functions return promises that resolve when the response is available, allowing for asynchronous operation.

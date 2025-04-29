@@ -5,6 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Goose App Maker Demo</title>
     <link rel="stylesheet" href="style.css?v=1.0">    
+    <!-- Global error handling script -->
+    <script>
+        // Global error handler to capture and report all unhandled errors
+        window.onerror = function(message, source, lineno, colno, error) {
+            // Make sure goose_api.js is loaded before trying to report errors
+            if (typeof reportError === 'function') {
+                reportError(`Unhandled error: ${message} at ${source}:${lineno}:${colno} | ${error ? error.stack : 'No stack trace available'}`);
+            } else {
+                console.error('Error occurred before goose_api.js was loaded:', message);
+                // Queue the error to be reported once the API is loaded
+                window.addEventListener('load', function() {
+                    if (typeof reportError === 'function') {
+                        reportError(`Queued error: ${message} at ${source}:${lineno}:${colno} | ${error ? error.stack : 'No stack trace available'}`);
+                    }
+                });
+            }
+            // Display error in console
+            console.error('Global error handler:', message, error);
+            // Return true to prevent the default browser error handler
+            return true;
+        };
+
+        // Capture unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+            const error = event.reason;
+            const message = error ? (error.message || 'Unhandled promise rejection') : 'Unhandled promise rejection';
+            
+            if (typeof reportError === 'function') {
+                reportError(`Unhandled promise rejection: ${message} | ${error ? error.stack : 'No stack trace available'}`);
+            } else {
+                console.error('Promise rejection occurred before goose_api.js was loaded:', message);
+                // Queue the error to be reported once the API is loaded
+                window.addEventListener('load', function() {
+                    if (typeof reportError === 'function') {
+                        reportError(`Queued promise rejection: ${message} | ${error ? error.stack : 'No stack trace available'}`);
+                    }
+                });
+            }
+            
+            console.error('Unhandled promise rejection:', error);
+            // Prevent the default handling
+            event.preventDefault();
+        });
+    </script>
 </head>
 <body>
     <div class="container">

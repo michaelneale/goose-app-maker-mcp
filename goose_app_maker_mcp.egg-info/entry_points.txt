@@ -1,2 +1,0 @@
-[console_scripts]
-app-maker-mcp = main:main

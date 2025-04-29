@@ -4,9 +4,10 @@ This MCP (Model Context Protocol) sever allows users to create, manage, and serv
 
 # Install
 
-<a href="https://michaelneale.github.io/goose-redirect/?cmd=uvx&arg=app-maker-mcp@latest&id=goose-app-maker&name=Goose%20App%20Maker&description=Create%20and%20share%20apps%20that%20use%20goose">click here to install in goose 🪿</a>
+<a href="https://michaelneale.github.io/goose-redirect/?cmd=uvx&arg=app-maker-mcp@latest&id=goose-app-maker&name=Goose%20App%20Maker&description=Create%20and%20share%20apps%20that%20use%20goose">click here to install in goose 🪿 🪿🪿🪿🪿🪿🪿🪿🪿🪿 
 
-![image](https://github.com/user-attachments/assets/4ddc14f8-7c83-4a1e-8e11-87c557355c9e)
+</a>
+
 
 
 ## Features
@@ -21,17 +22,17 @@ This MCP (Model Context Protocol) sever allows users to create, manage, and serv
 
 ## Examples 
 
-### Run productivity apps and dynamic dashboards
-
-goose keeps track of your apps: 
-
-<img width="682" alt="Screenshot 2025-04-28 at 7 35 46 pm" src="https://github.com/user-attachments/assets/6799833d-1edb-48f3-9061-656383f646fd" />
-
 ### Load data via goose (re-using its extensions)
 
 ![Screenshot 2025-04-28 at 7 38 24 pm](https://github.com/user-attachments/assets/260e3c29-8aee-4492-87e5-7f20fe8a8e41)
 
 ![Screenshot 2025-04-28 at 7 38 53 pm](https://github.com/user-attachments/assets/473730e6-350c-4af2-8797-39b505b6748b)
+
+<img width="400" alt="Screenshot 2025-04-28 at 7 35 46 pm" src="https://github.com/user-attachments/assets/4ddc14f8-7c83-4a1e-8e11-87c557355c9e" />
+
+goose keeps track of your apps: 
+
+<img width="682" alt="Screenshot 2025-04-28 at 7 35 46 pm" src="https://github.com/user-attachments/assets/6799833d-1edb-48f3-9061-656383f646fd" />
 
 
 ### Make apps on demand
@@ -39,6 +40,8 @@ goose keeps track of your apps:
 <img width="400" alt="Screenshot 2025-04-28 at 6 24 09 pm" src="https://github.com/user-attachments/assets/5b2d0a5b-9012-4f67-80e1-e61641bdb45a" />
 
 <img width="300" alt="Screenshot 2025-04-28 at 6 31 06 pm" src="https://github.com/user-attachments/assets/a856fc51-8476-4e39-afbb-99302f7e43c7" />
+
+
 
 ### Show rich tabular or list data as well
 
